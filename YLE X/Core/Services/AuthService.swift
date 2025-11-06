@@ -136,17 +136,14 @@ public struct AuthService: AuthServicing {
             throw AuthError.appleTokenNotFound
         }
 
-        // Get authorization code
-        guard let authorizationCodeData = credential.authorizationCode,
-              let authorizationCode = String(data: authorizationCodeData, encoding: .utf8) else {
-            throw AuthError.appleAuthorizationCodeNotFound
-        }
+        // Generate or use nonce for security
+        let nonce = generateNonce()
 
-        // Create Firebase credential
+        // Create Firebase credential with idToken and nonce
         let firebaseCredential = OAuthProvider.credential(
             withProviderID: "apple.com",
             idToken: identityToken,
-            rawNonce: authorizationCode
+            rawNonce: nonce
         )
 
         // Sign in with Firebase
@@ -176,6 +173,11 @@ public struct AuthService: AuthServicing {
     }
 
     // MARK: - Helper Methods
+    private func generateNonce() -> String {
+        let nonce = UUID().uuidString
+        return nonce.split(separator: "-").joined()
+    }
+
     private func formatAppleDisplayName(_ fullName: PersonNameComponents) -> String {
         var components: [String] = []
         if let givenName = fullName.givenName {
@@ -195,7 +197,6 @@ public enum AuthError: LocalizedError {
     case googleSignInCancelled
     case googleTokenNotFound
     case appleTokenNotFound
-    case appleAuthorizationCodeNotFound
     case firebaseSignInFailed(String)
 
     public var errorDescription: String? {
@@ -210,8 +211,6 @@ public enum AuthError: LocalizedError {
             return "Failed to retrieve Google ID token"
         case .appleTokenNotFound:
             return "Failed to retrieve Apple identity token"
-        case .appleAuthorizationCodeNotFound:
-            return "Failed to retrieve Apple authorization code"
         case .firebaseSignInFailed(let message):
             return "Firebase sign-in failed: \(message)"
         }
