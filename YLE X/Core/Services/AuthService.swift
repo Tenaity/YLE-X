@@ -136,14 +136,11 @@ public struct AuthService: AuthServicing {
             throw AuthError.appleTokenNotFound
         }
 
-        // Generate or use nonce for security
-        let nonce = generateNonce()
-
-        // Create Firebase credential with idToken and nonce
+        // Create Firebase credential with idToken only (new Firebase API)
         let firebaseCredential = OAuthProvider.credential(
             withProviderID: "apple.com",
             idToken: identityToken,
-            rawNonce: nonce
+            accessToken: nil
         )
 
         // Sign in with Firebase
@@ -173,11 +170,6 @@ public struct AuthService: AuthServicing {
     }
 
     // MARK: - Helper Methods
-    private func generateNonce() -> String {
-        let nonce = UUID().uuidString
-        return nonce.split(separator: "-").joined()
-    }
-
     private func formatAppleDisplayName(_ fullName: PersonNameComponents) -> String {
         var components: [String] = []
         if let givenName = fullName.givenName {
