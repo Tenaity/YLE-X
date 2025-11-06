@@ -9,13 +9,9 @@ import SwiftUI
 import AuthenticationServices
 
 struct SocialSignInView: View {
-    @StateObject private var authViewModel: AuthViewModel
+    @StateObject private var authViewModel = AuthViewModel()
     @State private var isLoading = false
     @State private var errorMessage: String?
-
-    init(authViewModel: AuthViewModel = AuthViewModel()) {
-        _authViewModel = StateObject(wrappedValue: authViewModel)
-    }
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
