@@ -136,11 +136,13 @@ public struct AuthService: AuthServicing {
             throw AuthError.appleTokenNotFound
         }
 
-        // Create Firebase credential with idToken only (new Firebase API)
+        // Create Firebase credential
+        // For Apple Sign-In, we use OAuthProvider with just the identity token
+        let nonce = UUID().uuidString
         let firebaseCredential = OAuthProvider.credential(
             withProviderID: "apple.com",
             idToken: identityToken,
-            accessToken: nil
+            rawNonce: nonce
         )
 
         // Sign in with Firebase
