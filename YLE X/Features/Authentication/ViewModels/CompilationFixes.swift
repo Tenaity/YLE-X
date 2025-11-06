@@ -82,7 +82,6 @@ struct CompilationVerification {
         let _: any ObservableObject = ExerciseSessionViewModel()
         let _: any ObservableObject = LearningViewModel()
         let _: any ObservableObject = PracticeViewModel()
-        let _: any ObservableObject = ParentDashboardManager()
         let _: any ObservableObject = SoundManager.shared
         print("✅ All ObservableObjects compile successfully")
     }
@@ -90,10 +89,7 @@ struct CompilationVerification {
     // Verify all model types are available
     static func verifyModels() {
         let _: VocabularyItem? = nil
-        let _: LearningData? = nil
-        let _: LearningActivity? = nil
         let _: Badge? = nil
-        let _: ParentRecommendation? = nil
         let _: Exercise? = nil
         let _: YLELevel = .starters
         let _: Skill = .vocabulary

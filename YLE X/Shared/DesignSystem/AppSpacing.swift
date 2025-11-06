@@ -3,135 +3,133 @@
 //  YLE X
 //
 //  Created by Tenaity on 6/11/25.
+//  Spacing system following Apple Design Guidelines (8pt base)
 //
 
-import Foundation
 import SwiftUI
 
-// MARK: - App Spacing System (Based on 4pt grid)
+// MARK: - Spacing Scale (8pt grid system)
 struct AppSpacing {
-    // MARK: - Base Spacing (4pt grid system)
-    static let xxxs: CGFloat = 2.0   // 2pt - Minimal spacing
-    static let xxs: CGFloat = 4.0    // 4pt - Very tight
-    static let xs: CGFloat = 8.0     // 8pt - Tight
-    static let sm: CGFloat = 12.0    // 12pt - Small
-    static let md: CGFloat = 16.0    // 16pt - Medium (default)
-    static let lg: CGFloat = 24.0    // 24pt - Large
-    static let xl: CGFloat = 32.0    // 32pt - Extra large
-    static let xxl: CGFloat = 48.0   // 48pt - XXL
-    static let xxxl: CGFloat = 64.0  // 64pt - XXXL
-    
-    // MARK: - Semantic Spacing (Readable names)
-    static let minimal = xxxs        // For very tight layouts
-    static let tight = xs            // For compact UI elements  
-    static let comfortable = md      // For general use
-    static let spacious = lg         // For breathing room
-    static let generous = xl         // For clear separation
-    
-    // MARK: - Component-Specific Spacing
-    struct Button {
-        static let paddingHorizontal = md     // 16pt
-        static let paddingVertical = sm       // 12pt
-        static let cornerRadius = xs          // 8pt
-        static let spacing = xs               // 8pt between buttons
+    // MARK: - Base Scale (8pt grid)
+    static let xs2: CGFloat = 4.0      // 4pt - Extra tight
+    static let xs: CGFloat = 8.0       // 8pt - Tight
+    static let sm: CGFloat = 12.0      // 12pt - Small
+    static let md: CGFloat = 16.0      // 16pt - Medium (default)
+    static let lg: CGFloat = 24.0      // 24pt - Large
+    static let xl: CGFloat = 32.0      // 32pt - Extra large
+    static let xl2: CGFloat = 48.0     // 48pt - Double extra large
+    static let xl3: CGFloat = 64.0     // 64pt - Triple extra large
+
+    // MARK: - Component Spacing
+    struct component {
+        static let buttonPaddingHorizontal = AppSpacing.md
+        static let buttonPaddingVertical = AppSpacing.sm
+        static let buttonSpacing = AppSpacing.xs
+        static let buttonMinHeight: CGFloat = 44.0     // Apple minimum
+
+        static let cardPadding = AppSpacing.lg
+        static let cardSpacing = AppSpacing.md
+        static let cardMinHeight: CGFloat = 64.0
+
+        static let listItemPadding = AppSpacing.md
+        static let listItemSpacing = AppSpacing.md
+        static let listGroupSpacing = AppSpacing.lg
+
+        static let screenHorizontalMargin = AppSpacing.lg
+        static let screenVerticalMargin = AppSpacing.md
+        static let screenSectionSpacing = AppSpacing.xl
     }
-    
-    struct Card {
-        static let padding = lg               // 24pt internal padding
-        static let spacing = md               // 16pt between cards  
-        static let cornerRadius = sm          // 12pt
-        static let shadowOffset = xxxs        // 2pt
+
+    // MARK: - Navigation Spacing
+    struct navigation {
+        static let barHeight: CGFloat = 44.0
+        static let tabBarHeight: CGFloat = 49.0
+        static let buttonSpacing = AppSpacing.lg
+        static let itemSpacing = AppSpacing.md
     }
-    
-    struct Screen {
-        static let horizontalMargin = lg      // 24pt side margins
-        static let verticalMargin = md        // 16pt top/bottom margins
-        static let sectionSpacing = xl        // 32pt between sections
-    }
-    
-    struct List {
-        static let itemSpacing = md           // 16pt between list items
-        static let itemPadding = md           // 16pt internal item padding
-        static let groupSpacing = lg          // 24pt between groups
-    }
-    
-    struct Navigation {
-        static let barHeight: CGFloat = 44.0  // Standard nav bar height
-        static let tabBarHeight: CGFloat = 49.0 // Standard tab bar height
-        static let buttonSpacing = lg         // 24pt between nav buttons
-    }
-    
-    // MARK: - Kid-Friendly Spacing (Larger touch targets)
-    struct KidFriendly {
-        static let buttonMinSize: CGFloat = 44.0    // Minimum touch target
-        static let buttonPadding = lg               // 24pt for easier tapping
-        static let elementSpacing = lg              // 24pt between elements
-        static let cardPadding = xl                 // 32pt internal padding
-    }
-    
-    // MARK: - Accessibility Spacing
-    struct Accessibility {
-        static let minTouchTarget: CGFloat = 44.0   // Apple's minimum
-        static let recommendedTouchTarget: CGFloat = 60.0 // Recommended for accessibility
-        static let elementSpacing = xl              // 32pt for clear separation
+
+    // MARK: - Accessibility (Minimum touch target)
+    struct accessibility {
+        static let minTouchTarget: CGFloat = 44.0      // Apple minimum
+        static let recommendedTouchTarget: CGFloat = 60.0
     }
 }
 
-// MARK: - Spacing Extensions for SwiftUI
-extension EdgeInsets {
-    // MARK: - Symmetric Insets
-    static let appTiny = EdgeInsets(top: AppSpacing.xxs, leading: AppSpacing.xxs, bottom: AppSpacing.xxs, trailing: AppSpacing.xxs)
-    static let appSmall = EdgeInsets(top: AppSpacing.xs, leading: AppSpacing.xs, bottom: AppSpacing.xs, trailing: AppSpacing.xs)
-    static let appMedium = EdgeInsets(top: AppSpacing.md, leading: AppSpacing.md, bottom: AppSpacing.md, trailing: AppSpacing.md)
-    static let appLarge = EdgeInsets(top: AppSpacing.lg, leading: AppSpacing.lg, bottom: AppSpacing.lg, trailing: AppSpacing.lg)
-    
-    // MARK: - Screen-Level Insets
-    static let appScreen = EdgeInsets(
-        top: AppSpacing.Screen.verticalMargin,
-        leading: AppSpacing.Screen.horizontalMargin,
-        bottom: AppSpacing.Screen.verticalMargin,
-        trailing: AppSpacing.Screen.horizontalMargin
-    )
-    
-    // MARK: - Card Insets
-    static let appCard = EdgeInsets(
-        top: AppSpacing.Card.padding,
-        leading: AppSpacing.Card.padding,
-        bottom: AppSpacing.Card.padding,
-        trailing: AppSpacing.Card.padding
-    )
-}
-
-// MARK: - SwiftUI View Extensions
+// MARK: - View Modifiers for Spacing
 extension View {
-    // MARK: - Quick Padding Applications
-    func appPadding(_ spacing: AppSpacingSize = .medium) -> some View {
-        switch spacing {
-        case .tiny: return self.padding(AppSpacing.xxs)
-        case .small: return self.padding(AppSpacing.xs)
-        case .medium: return self.padding(AppSpacing.md)
-        case .large: return self.padding(AppSpacing.lg)
-        case .extraLarge: return self.padding(AppSpacing.xl)
+    /// Apply standard app padding
+    func appPadding(_ size: AppPaddingSize = .medium) -> some View {
+        let value = size.value
+        return self.padding(value)
+    }
+
+    /// Apply horizontal padding only
+    func appPaddingHorizontal(_ size: AppPaddingSize = .medium) -> some View {
+        let value = size.value
+        return self.padding(.horizontal, value)
+    }
+
+    /// Apply vertical padding only
+    func appPaddingVertical(_ size: AppPaddingSize = .medium) -> some View {
+        let value = size.value
+        return self.padding(.vertical, value)
+    }
+
+    /// Apply screen-level padding
+    func appScreenPadding() -> some View {
+        self.padding(.horizontal, AppSpacing.component.screenHorizontalMargin)
+            .padding(.vertical, AppSpacing.component.screenVerticalMargin)
+    }
+
+    /// Apply card padding
+    func appCardPadding() -> some View {
+        self.padding(AppSpacing.component.cardPadding)
+    }
+
+    /// Apply button padding
+    func appButtonPadding() -> some View {
+        self.padding(.horizontal, AppSpacing.component.buttonPaddingHorizontal)
+            .padding(.vertical, AppSpacing.component.buttonPaddingVertical)
+    }
+}
+
+// MARK: - Padding Size Enum
+enum AppPaddingSize {
+    case xs2, xs, small, medium, large, xl, xl2, xl3
+
+    var value: CGFloat {
+        switch self {
+        case .xs2: return AppSpacing.xs2
+        case .xs: return AppSpacing.xs
+        case .small: return AppSpacing.sm
+        case .medium: return AppSpacing.md
+        case .large: return AppSpacing.lg
+        case .xl: return AppSpacing.xl
+        case .xl2: return AppSpacing.xl2
+        case .xl3: return AppSpacing.xl3
         }
     }
-    
-    // MARK: - Component-Specific Padding
-    func appScreenPadding() -> some View {
-        self.padding(.horizontal, AppSpacing.Screen.horizontalMargin)
-            .padding(.vertical, AppSpacing.Screen.verticalMargin)
-    }
-    
-    func appCardPadding() -> some View {
-        self.padding(AppSpacing.Card.padding)
-    }
-    
-    func appButtonPadding() -> some View {
-        self.padding(.horizontal, AppSpacing.Button.paddingHorizontal)
-            .padding(.vertical, AppSpacing.Button.paddingVertical)
-    }
 }
 
-// MARK: - Spacing Size Enum
-enum AppSpacingSize {
-    case tiny, small, medium, large, extraLarge
+// MARK: - EdgeInsets Extensions
+extension EdgeInsets {
+    static let appXs = EdgeInsets(top: AppSpacing.xs, leading: AppSpacing.xs, bottom: AppSpacing.xs, trailing: AppSpacing.xs)
+    static let appSmall = EdgeInsets(top: AppSpacing.sm, leading: AppSpacing.sm, bottom: AppSpacing.sm, trailing: AppSpacing.sm)
+    static let appMedium = EdgeInsets(top: AppSpacing.md, leading: AppSpacing.md, bottom: AppSpacing.md, trailing: AppSpacing.md)
+    static let appLarge = EdgeInsets(top: AppSpacing.lg, leading: AppSpacing.lg, bottom: AppSpacing.lg, trailing: AppSpacing.lg)
+    static let appXl = EdgeInsets(top: AppSpacing.xl, leading: AppSpacing.xl, bottom: AppSpacing.xl, trailing: AppSpacing.xl)
+
+    static let appScreen = EdgeInsets(
+        top: AppSpacing.component.screenVerticalMargin,
+        leading: AppSpacing.component.screenHorizontalMargin,
+        bottom: AppSpacing.component.screenVerticalMargin,
+        trailing: AppSpacing.component.screenHorizontalMargin
+    )
+
+    static let appCard = EdgeInsets(
+        top: AppSpacing.component.cardPadding,
+        leading: AppSpacing.component.cardPadding,
+        bottom: AppSpacing.component.cardPadding,
+        trailing: AppSpacing.component.cardPadding
+    )
 }

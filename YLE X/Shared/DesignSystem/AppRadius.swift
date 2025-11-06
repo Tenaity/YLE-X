@@ -3,184 +3,88 @@
 //  YLE X
 //
 //  Created by Tenaity on 6/11/25.
+//  Corner radius system following Apple Design Guidelines
 //
 
-import Foundation
 import SwiftUI
 
-// MARK: - Corner Radius System (iOS-style)
+// MARK: - Radius Scale
 struct AppRadius {
-    // MARK: - Standard Radius Values
-    static let none: CGFloat = 0        // No rounding
-    static let tiny: CGFloat = 4        // Subtle rounding
-    static let small: CGFloat = 8       // Small elements
-    static let medium: CGFloat = 12     // Standard elements
-    static let large: CGFloat = 16      // Cards, buttons
-    static let xlarge: CGFloat = 20     // Large cards
-    static let xxlarge: CGFloat = 28    // Hero elements
-    static let circle: CGFloat = 50     // Circular elements
-    
-    // MARK: - Component-Specific Radius
-    struct Button {
-        static let small = AppRadius.small      // 8pt - Small buttons
-        static let medium = AppRadius.medium    // 12pt - Standard buttons
-        static let large = AppRadius.large      // 16pt - Primary buttons
-        static let pill: CGFloat = 25           // Pill-shaped buttons
-    }
-    
-    struct Card {
-        static let small = AppRadius.medium     // 12pt - Small cards
-        static let medium = AppRadius.large     // 16pt - Standard cards
-        static let large = AppRadius.xlarge     // 20pt - Large cards
-    }
-    
-    struct Input {
-        static let textField = AppRadius.small  // 8pt - Text fields
-        static let searchBar = AppRadius.large  // 16pt - Search bars
-    }
-    
-    struct Modal {
-        static let sheet = AppRadius.large      // 16pt - Bottom sheets
-        static let alert = AppRadius.medium     // 12pt - Alerts
-    }
-    
-    // MARK: - Kid-Friendly Radius (More playful, rounded)
-    struct KidFriendly {
-        static let button = AppRadius.large     // 16pt - Friendly buttons
-        static let card = AppRadius.xlarge      // 20pt - Playful cards
-        static let image = AppRadius.medium     // 12pt - Images
+    // MARK: - Base Scale
+    static let none: CGFloat = 0
+    static let xs: CGFloat = 4
+    static let sm: CGFloat = 8
+    static let md: CGFloat = 12
+    static let lg: CGFloat = 16
+    static let xl: CGFloat = 20
+    static let full: CGFloat = .infinity
+
+    // MARK: - Component Radius
+    struct component {
+        static let button = AppRadius.sm
+        static let card = AppRadius.md
+        static let input = AppRadius.xs
+        static let modal = AppRadius.lg
+        static let sheet = AppRadius.lg
     }
 }
 
-// MARK: - Shape Extensions
-extension RoundedRectangle {
-    // MARK: - Quick Shape Creation
-    static func appShape(_ radius: AppRadiusSize = .medium) -> RoundedRectangle {
-        switch radius {
-        case .none: return RoundedRectangle(cornerRadius: AppRadius.none)
-        case .tiny: return RoundedRectangle(cornerRadius: AppRadius.tiny)
-        case .small: return RoundedRectangle(cornerRadius: AppRadius.small)
-        case .medium: return RoundedRectangle(cornerRadius: AppRadius.medium)
-        case .large: return RoundedRectangle(cornerRadius: AppRadius.large)
-        case .xlarge: return RoundedRectangle(cornerRadius: AppRadius.xlarge)
-        case .circle: return RoundedRectangle(cornerRadius: AppRadius.circle)
-        }
-    }
-    
-    // MARK: - Component Shapes
-    static var appButton: RoundedRectangle {
-        RoundedRectangle(cornerRadius: AppRadius.Button.medium)
-    }
-    
-    static var appCard: RoundedRectangle {
-        RoundedRectangle(cornerRadius: AppRadius.Card.medium)
-    }
-    
-    static var appInput: RoundedRectangle {
-        RoundedRectangle(cornerRadius: AppRadius.Input.textField)
-    }
-}
-
-// MARK: - View Extensions for Corner Radius
+// MARK: - View Modifiers for Radius
 extension View {
-    // MARK: - Corner Radius Modifiers
+    /// Apply corner radius
     func appCornerRadius(_ radius: AppRadiusSize = .medium) -> some View {
-        switch radius {
-        case .none: return self.cornerRadius(AppRadius.none)
-        case .tiny: return self.cornerRadius(AppRadius.tiny)
-        case .small: return self.cornerRadius(AppRadius.small)
-        case .medium: return self.cornerRadius(AppRadius.medium)
-        case .large: return self.cornerRadius(AppRadius.large)
-        case .xlarge: return self.cornerRadius(AppRadius.xlarge)
-        case .circle: return self.cornerRadius(AppRadius.circle)
-        }
+        self.cornerRadius(radius.value)
     }
-    
-    // MARK: - Component-Specific Radius
-    func appButtonRadius() -> some View {
-        self.cornerRadius(AppRadius.Button.medium)
-    }
-    
-    func appCardRadius() -> some View {
-        self.cornerRadius(AppRadius.Card.medium)
-    }
-    
-    func appInputRadius() -> some View {
-        self.cornerRadius(AppRadius.Input.textField)
-    }
-    
-    // MARK: - Clipped Corner Radius (Better performance for complex views)
-    func appClippedCornerRadius(_ radius: CGFloat) -> some View {
-        self.clipShape(RoundedRectangle(cornerRadius: radius))
-    }
-    
+
+    /// Apply clipped corner radius (better performance)
     func appClippedCornerRadius(_ radius: AppRadiusSize = .medium) -> some View {
-        let radiusValue: CGFloat = {
-            switch radius {
-            case .none: return AppRadius.none
-            case .tiny: return AppRadius.tiny
-            case .small: return AppRadius.small
-            case .medium: return AppRadius.medium
-            case .large: return AppRadius.large
-            case .xlarge: return AppRadius.xlarge
-            case .circle: return AppRadius.circle
-            }
-        }()
-        return self.clipShape(RoundedRectangle(cornerRadius: radiusValue))
+        self.clipShape(RoundedRectangle(cornerRadius: radius.value))
+    }
+
+    /// Apply button radius
+    func appButtonRadius() -> some View {
+        self.cornerRadius(AppRadius.component.button)
+    }
+
+    /// Apply card radius
+    func appCardRadius() -> some View {
+        self.cornerRadius(AppRadius.component.card)
+    }
+
+    /// Apply input radius
+    func appInputRadius() -> some View {
+        self.cornerRadius(AppRadius.component.input)
     }
 }
 
 // MARK: - Radius Size Enum
 enum AppRadiusSize {
-    case none, tiny, small, medium, large, xlarge, circle
-}
+    case none, xs, small, medium, large, xl, full
 
-// MARK: - Advanced Shape Modifiers
-extension View {
-    /// Creates a rounded rectangle with different corner radii
-    func appRoundedCorners(_ corners: UIRectCorner, radius: CGFloat) -> some View {
-        self.clipShape(
-            RoundedCornerShape(corners: corners, radius: radius)
-        )
-    }
-    
-    /// Kid-friendly shape with extra rounding
-    func appKidFriendlyShape() -> some View {
-        self.appClippedCornerRadius(.xlarge)
+    var value: CGFloat {
+        switch self {
+        case .none: return AppRadius.none
+        case .xs: return AppRadius.xs
+        case .small: return AppRadius.sm
+        case .medium: return AppRadius.md
+        case .large: return AppRadius.lg
+        case .xl: return AppRadius.xl
+        case .full: return AppRadius.full
+        }
     }
 }
 
-// MARK: - Custom Rounded Corner Shape
-struct RoundedCornerShape: Shape {
-    let corners: UIRectCorner
-    let radius: CGFloat
-    
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
+// MARK: - RoundedRectangle Extensions
+extension RoundedRectangle {
+    static var appButton: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AppRadius.component.button)
     }
-}
 
-// MARK: - Liquid Glass Shape (Modern iOS Design)
-struct LiquidGlassShape: Shape {
-    let radius: CGFloat
-    
-    func path(in rect: CGRect) -> Path {
-        // Create a path with slightly more rounded corners for glass effect
-        let adjustedRadius = min(radius, min(rect.width, rect.height) / 2)
-        return Path(
-            roundedRect: rect,
-            cornerRadius: adjustedRadius
-        )
+    static var appCard: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AppRadius.component.card)
     }
-}
 
-extension View {
-    func appLiquidGlassShape(radius: CGFloat = AppRadius.large) -> some View {
-        self.clipShape(LiquidGlassShape(radius: radius))
+    static var appInput: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AppRadius.component.input)
     }
 }

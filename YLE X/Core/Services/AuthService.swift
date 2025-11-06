@@ -9,6 +9,8 @@
 import Foundation
 import FirebaseAuth
 import AuthenticationServices
+import GoogleSignIn
+import CryptoKit
 
 // MARK: - Type Aliases
 public typealias FirebaseUser = User
@@ -88,30 +90,130 @@ public struct AuthService: AuthServicing {
         Auth.auth().removeStateDidChangeListener(handle)
     }
 
-    // MARK: - Social Sign-In (Placeholder implementations)
+    // MARK: - Google Sign-In
     public func signInWithGoogle() async throws {
-        throw AuthError.googleSignInNotImplemented
+        // Get the root view controller for presenting sign-in flow
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            throw AuthError.viewControllerNotFound
+        }
+
+        // Perform Google Sign-In
+        let result = try await GIDSignIn.sharedInstance.signIn(
+            withPresenting: rootViewController
+        )
+
+        // Get ID token and access token
+        guard let idToken = result.user.idToken?.tokenString else {
+            throw AuthError.googleTokenNotFound
+        }
+
+        let accessToken = result.user.accessToken.tokenString
+
+        // Create Firebase credential
+        let credential = GoogleAuthProvider.credential(
+            withIDToken: idToken,
+            accessToken: accessToken
+        )
+
+        // Sign in with Firebase
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            Auth.auth().signIn(with: credential) { _, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
     }
 
+    // MARK: - Apple Sign-In
     public func signInWithApple(credential: ASAuthorizationAppleIDCredential) async throws {
-        throw AuthError.appleSignInNotImplemented
+        // Get identity token
+        guard let identityTokenData = credential.identityToken,
+              let identityToken = String(data: identityTokenData, encoding: .utf8) else {
+            throw AuthError.appleTokenNotFound
+        }
+
+        // Get authorization code
+        guard let authorizationCodeData = credential.authorizationCode,
+              let authorizationCode = String(data: authorizationCodeData, encoding: .utf8) else {
+            throw AuthError.appleAuthorizationCodeNotFound
+        }
+
+        // Create Firebase credential
+        let firebaseCredential = OAuthProvider.credential(
+            withProviderID: "apple.com",
+            idToken: identityToken,
+            rawNonce: authorizationCode
+        )
+
+        // Sign in with Firebase
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            Auth.auth().signIn(with: firebaseCredential) { result, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let user = result?.user {
+                    // Update user profile with Apple-provided name if available
+                    if let fullName = credential.fullName,
+                       user.displayName?.isEmpty ?? true {
+                        let changeRequest = user.createProfileChangeRequest()
+                        changeRequest.displayName = formatAppleDisplayName(fullName)
+                        changeRequest.commitChanges { commitError in
+                            if let commitError {
+                                continuation.resume(throwing: commitError)
+                            } else {
+                                continuation.resume(returning: ())
+                            }
+                        }
+                    } else {
+                        continuation.resume(returning: ())
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Helper Methods
+    private func formatAppleDisplayName(_ fullName: PersonNameComponents) -> String {
+        var components: [String] = []
+        if let givenName = fullName.givenName {
+            components.append(givenName)
+        }
+        if let familyName = fullName.familyName {
+            components.append(familyName)
+        }
+        return components.joined(separator: " ")
     }
 }
 
 // MARK: - Custom Auth Errors
 public enum AuthError: LocalizedError {
     case userCreationFailed
-    case googleSignInNotImplemented
-    case appleSignInNotImplemented
-    
+    case viewControllerNotFound
+    case googleSignInCancelled
+    case googleTokenNotFound
+    case appleTokenNotFound
+    case appleAuthorizationCodeNotFound
+    case firebaseSignInFailed(String)
+
     public var errorDescription: String? {
         switch self {
         case .userCreationFailed:
             return "Failed to create user account"
-        case .googleSignInNotImplemented:
-            return "Google Sign-In integration is pending implementation"
-        case .appleSignInNotImplemented:
-            return "Apple Sign-In integration is pending implementation"
+        case .viewControllerNotFound:
+            return "Unable to find view controller for sign-in"
+        case .googleSignInCancelled:
+            return "Google Sign-In was cancelled"
+        case .googleTokenNotFound:
+            return "Failed to retrieve Google ID token"
+        case .appleTokenNotFound:
+            return "Failed to retrieve Apple identity token"
+        case .appleAuthorizationCodeNotFound:
+            return "Failed to retrieve Apple authorization code"
+        case .firebaseSignInFailed(let message):
+            return "Firebase sign-in failed: \(message)"
         }
     }
 }

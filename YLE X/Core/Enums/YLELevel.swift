@@ -52,17 +52,17 @@ enum YLELevel: String, CaseIterable, Identifiable, Codable {
     
     var primaryColor: Color {
         switch self {
-        case .starters: return .startersGreen
-        case .movers: return .moversBlue
-        case .flyers: return .flyersPurple
+        case .starters: return .appLevelStarters
+        case .movers: return .appLevelMovers
+        case .flyers: return .appLevelFlyers
         }
     }
-    
+
     var secondaryColor: Color {
         switch self {
-        case .starters: return .startersLightGreen
-        case .movers: return .moversLightBlue
-        case .flyers: return .flyersLightPurple
+        case .starters: return .appLevelStarters.opacity(0.15)
+        case .movers: return .appLevelMovers.opacity(0.15)
+        case .flyers: return .appLevelFlyers.opacity(0.15)
         }
     }
 }

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(\"/Users/tenaity/Documents/YLE X/YLE X/Shared/Extensions/Animation+App.swift\" )",
+      "Bash(\"/Users/tenaity/Documents/YLE X/YLE X/Shared/Extensions/AppFixesAndCompatibility.swift\" )",
+      "Bash(\"/Users/tenaity/Documents/YLE X/YLE X/Shared/Extensions/ProgressViewStyle+App.swift\" )",
+      "Bash(\"/Users/tenaity/Documents/YLE X/YLE X/Shared/Extensions/Shadow+App.swift\")",
+      "Bash(xcodebuild:*)",
+      "Bash(__NEW_LINE__ cd \"/Users/tenaity/Documents/YLE X\")",
+      "Bash(__NEW_LINE__ echo \"=== FINAL ONBOARDING STRUCTURE ===\")",
+      "Bash(find:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

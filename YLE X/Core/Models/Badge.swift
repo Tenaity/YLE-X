@@ -13,15 +13,37 @@ struct Badge: Identifiable, Hashable, Codable {
     let name: String
     let description: String
     let emoji: String
-    let colorName: String // Lưu tên màu từ Design System
+    let colorName: String // Color name from Design System
     let earnedDate: Date
-    
+
     var color: Color {
         switch colorName {
-        case "moversBlue": return .moversBlue
-        case "flyersPurple": return .flyersPurple
-        case "startersGreen": return .startersGreen
-        default: return .gray
+        // Level badges
+        case "appBadgeStarters": return .appBadgeStarters
+        case "appBadgeMovers": return .appBadgeMovers
+        case "appBadgeFlyers": return .appBadgeFlyers
+
+        // Achievement level badges
+        case "appBadgeGold": return .appBadgeGold
+        case "appBadgeSilver": return .appBadgeSilver
+        case "appBadgeBronze": return .appBadgeBronze
+
+        // Fallback
+        default: return .appTextSecondary
         }
+    }
+}
+
+// MARK: - Badge Factory (Sample badges)
+extension Badge {
+    static func sampleBadge(level: String = "appBadgeStarters") -> Badge {
+        Badge(
+            id: UUID().uuidString,
+            name: "First Step",
+            description: "Complete your first exercise",
+            emoji: "🌱",
+            colorName: level,
+            earnedDate: Date()
+        )
     }
 }

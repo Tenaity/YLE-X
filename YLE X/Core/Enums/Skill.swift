@@ -54,18 +54,22 @@ enum Skill: String, CaseIterable, Identifiable, Codable {
     var color: Color {
         switch self {
         case .listening:
-            return .blue
+            return .appSkillListening
         case .reading:
-            return .green
+            return .appSkillReading
         case .writing:
-            return .purple
+            return .appSkillWriting
         case .speaking:
-            return .orange
+            return .appSkillSpeaking
         case .vocabulary:
-            return .red
+            return .appSkillVocabulary
         case .grammar:
-            return .indigo
+            return .appSkillGrammar
         }
+    }
+
+    var lightColor: Color {
+        self.color.opacity(0.15)
     }
 }
 

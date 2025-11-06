@@ -3,230 +3,191 @@
 //  YLE X
 //
 //  Created by Tenaity on 6/11/25.
+//  Button component following Apple Design Guidelines
 //
 
 import SwiftUI
 
-// MARK: - Modern App Button with Kid-Friendly Design
+// MARK: - AppButton (Primary Component)
 struct AppButton: View {
-    // MARK: - Properties
+    // MARK: - Configuration
     let title: String
-    var emoji: String? = nil
-    var icon: String? = nil
-    var style: AppButtonStyle = .primary
+    var icon: String?
     var size: AppButtonSize = .medium
+    var style: AppButtonStyle = .primary
     let action: () -> Void
-    
+
     // MARK: - State
     @State private var isPressed = false
-    @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: {
-            // Haptic feedback
             HapticManager.shared.playLight()
             action()
         }) {
-            HStack(spacing: size.iconSpacing) {
-                // Leading content (emoji or icon)
-                if let emoji = emoji {
-                    Text(emoji)
-                        .font(size.emojiFont)
-                } else if let icon = icon {
+            HStack(spacing: AppSpacing.xs) {
+                if let icon = icon {
                     Image(systemName: icon)
-                        .font(size.iconFont)
-                        .foregroundColor(style.foregroundColor)
+                        .font(.system(size: size.iconSize, weight: .semibold))
                 }
-                
-                // Title
                 Text(title)
-                    .font(size.textFont)
+                    .font(size.font)
                     .fontWeight(.semibold)
-                    .foregroundColor(style.foregroundColor)
             }
             .frame(maxWidth: size == .fullWidth ? .infinity : nil)
             .frame(height: size.height)
-            .padding(.horizontal, size.horizontalPadding)
-            .background(
-                RoundedRectangle(cornerRadius: size.cornerRadius)
-                    .fill(style.backgroundColor)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: size.cornerRadius)
-                            .stroke(style.borderColor, lineWidth: style.borderWidth)
-                    )
+            .padding(.horizontal, size.paddingHorizontal)
+            .foregroundColor(style.foregroundColor)
+            .background(style.backgroundColor)
+            .cornerRadius(AppRadius.component.button)
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.component.button)
+                    .stroke(style.borderColor, lineWidth: style.borderWidth)
             )
-            .appShadow(level: shadowLevel)
-            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .appShadow(level: isPressed ? .subtle : style.shadowLevel)
+            .scaleEffect(isPressed ? 0.96 : 1.0)
         }
         .buttonStyle(PlainButtonStyle())
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            withAnimation(.appQuick) {
-                isPressed = pressing
-            }
-        }, perform: {})
-        .onHover { hovering in
-            withAnimation(.appQuick) {
-                isHovered = hovering
-            }
-        }
-        .accessibilityLabel(title)
-        .accessibilityHint("Nhấn để thực hiện \(title.lowercased())")
-        .accessibilityAddTraits(.isButton)
-    }
-    
-    private var shadowLevel: AppShadowLevel {
-        if isPressed {
-            return .subtle
-        } else if isHovered {
-            return .medium
-        } else {
-            return style.defaultShadow
-        }
+        .onLongPressGesture(
+            minimumDuration: 0,
+            maximumDistance: .infinity,
+            pressing: { pressing in
+                withAnimation(.easeOut(duration: 0.15)) {
+                    isPressed = pressing
+                }
+            },
+            perform: {}
+        )
+        .disabled(!style.isEnabled)
+        .opacity(style.isEnabled ? 1.0 : 0.5)
     }
 }
 
-// MARK: - Button Style Enum
-enum AppButtonStyle {
-    case primary, secondary, tertiary, success, warning, error, ghost, outline
-    
-    var backgroundColor: Color {
-        switch self {
-        case .primary: return .appPrimary
-        case .secondary: return .appSecondary
-        case .tertiary: return .appCardBackground
-        case .success: return .appSuccess
-        case .warning: return .appWarning
-        case .error: return .appError
-        case .ghost: return .clear
-        case .outline: return .clear
-        }
-    }
-    
-    var foregroundColor: Color {
-        switch self {
-        case .primary, .secondary, .success, .warning, .error: return .white
-        case .tertiary, .ghost, .outline: return .appPrimaryText
-        }
-    }
-    
-    var borderColor: Color {
-        switch self {
-        case .outline: return .appPrimaryText.opacity(0.3)
-        default: return .clear
-        }
-    }
-    
-    var borderWidth: CGFloat {
-        switch self {
-        case .outline: return 1.5
-        default: return 0
-        }
-    }
-    
-    var defaultShadow: AppShadowLevel {
-        switch self {
-        case .primary, .success, .warning, .error: return .light
-        case .secondary: return .subtle
-        case .tertiary, .ghost, .outline: return .none
-        }
-    }
-}
-
-// MARK: - Button Size Enum
+// MARK: - Button Size
 enum AppButtonSize {
-    case small, medium, large, extraLarge, fullWidth
-    
+    case small, medium, large, fullWidth
+
     var height: CGFloat {
         switch self {
         case .small: return 36
         case .medium: return 44
         case .large: return 52
-        case .extraLarge: return 60
-        case .fullWidth: return 52
+        case .fullWidth: return 44
         }
     }
-    
-    var horizontalPadding: CGFloat {
+
+    var font: Font {
         switch self {
-        case .small: return AppSpacing.md
-        case .medium: return AppSpacing.lg
-        case .large: return AppSpacing.xl
-        case .extraLarge: return AppSpacing.xl
-        case .fullWidth: return AppSpacing.lg
+        case .small: return .appHeadlineSmall
+        case .medium: return .appHeadlineMedium
+        case .large: return .appHeadlineLarge
+        case .fullWidth: return .appHeadlineMedium
         }
     }
-    
-    var textFont: Font {
+
+    var iconSize: CGFloat {
         switch self {
-        case .small: return .appLabelMedium
-        case .medium: return .appLabelLarge
-        case .large: return .appTitleSmall
-        case .extraLarge: return .appTitleMedium
-        case .fullWidth: return .appLabelLarge
+        case .small: return 14
+        case .medium: return 16
+        case .large: return 18
+        case .fullWidth: return 16
         }
     }
-    
-    var iconFont: Font {
+
+    var paddingHorizontal: CGFloat {
         switch self {
-        case .small: return .system(size: 14, weight: .medium)
-        case .medium: return .system(size: 16, weight: .medium)
-        case .large: return .system(size: 18, weight: .medium)
-        case .extraLarge: return .system(size: 20, weight: .medium)
-        case .fullWidth: return .system(size: 16, weight: .medium)
-        }
-    }
-    
-    var emojiFont: Font {
-        switch self {
-        case .small: return .system(size: 16)
-        case .medium: return .system(size: 18)
-        case .large: return .system(size: 20)
-        case .extraLarge: return .system(size: 22)
-        case .fullWidth: return .system(size: 18)
-        }
-    }
-    
-    var cornerRadius: CGFloat {
-        switch self {
-        case .small: return AppRadius.small
-        case .medium: return AppRadius.medium
-        case .large: return AppRadius.large
-        case .extraLarge: return AppRadius.large
-        case .fullWidth: return AppRadius.medium
-        }
-    }
-    
-    var iconSpacing: CGFloat {
-        switch self {
-        case .small: return AppSpacing.xs
-        case .medium: return AppSpacing.sm
-        case .large: return AppSpacing.md
-        case .extraLarge: return AppSpacing.md
-        case .fullWidth: return AppSpacing.sm
+        case .small: return AppSpacing.sm
+        case .medium: return AppSpacing.md
+        case .large: return AppSpacing.lg
+        case .fullWidth: return AppSpacing.md
         }
     }
 }
 
-// MARK: - Specialized App Buttons
+// MARK: - Button Style
+enum AppButtonStyle {
+    case primary, secondary, tertiary, destructive, plain
+
+    var backgroundColor: Color {
+        switch self {
+        case .primary: return .appPrimary
+        case .secondary: return .appBackgroundSecondary
+        case .tertiary: return .appFillLight
+        case .destructive: return .appError
+        case .plain: return .clear
+        }
+    }
+
+    var foregroundColor: Color {
+        switch self {
+        case .primary, .destructive: return .white
+        case .secondary, .tertiary: return .appText
+        case .plain: return .appPrimary
+        }
+    }
+
+    var borderColor: Color {
+        switch self {
+        case .plain: return .appText.opacity(0.3)
+        default: return .clear
+        }
+    }
+
+    var borderWidth: CGFloat {
+        self == .plain ? 1.5 : 0
+    }
+
+    var shadowLevel: AppShadowLevel {
+        switch self {
+        case .primary, .destructive: return .light
+        case .secondary: return .subtle
+        case .tertiary, .plain: return .none
+        }
+    }
+
+    var isEnabled: Bool {
+        self != .destructive  // Destructive can be disabled
+    }
+}
+
+// MARK: - Specialized Button Variants
 struct AppPrimaryButton: View {
     let title: String
-    var emoji: String? = nil
-    var icon: String? = nil
+    var icon: String?
     let action: () -> Void
-    
+
     var body: some View {
-        AppButton(title: title, emoji: emoji, icon: icon, style: .primary, size: .fullWidth, action: action)
+        AppButton(title: title, icon: icon, size: .fullWidth, style: .primary, action: action)
     }
 }
 
 struct AppSecondaryButton: View {
     let title: String
-    var emoji: String? = nil
-    var icon: String? = nil
+    var icon: String?
     let action: () -> Void
-    
+
     var body: some View {
-        AppButton(title: title, emoji: emoji, icon: icon, style: .secondary, size: .medium, action: action)
+        AppButton(title: title, icon: icon, size: .medium, style: .secondary, action: action)
+    }
+}
+
+struct AppTertiaryButton: View {
+    let title: String
+    var icon: String?
+    let action: () -> Void
+
+    var body: some View {
+        AppButton(title: title, icon: icon, size: .medium, style: .tertiary, action: action)
+    }
+}
+
+struct AppDestructiveButton: View {
+    let title: String
+    var icon: String?
+    let action: () -> Void
+
+    var body: some View {
+        AppButton(title: title, icon: icon, size: .fullWidth, style: .destructive, action: action)
     }
 }
 
@@ -235,57 +196,41 @@ struct AppIconButton: View {
     var size: AppButtonSize = .medium
     var style: AppButtonStyle = .tertiary
     let action: () -> Void
-    
+
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            HapticManager.shared.playLight()
+            action()
+        }) {
             Image(systemName: icon)
-                .font(size.iconFont)
+                .font(.system(size: size.iconSize, weight: .semibold))
                 .foregroundColor(style.foregroundColor)
-                .frame(width: size.height, height: size.height)
-                .background(
-                    Circle()
-                        .fill(style.backgroundColor)
+                .frame(
+                    width: size.height,
+                    height: size.height
                 )
-                .appShadow(level: style.defaultShadow)
+                .background(style.backgroundColor)
+                .cornerRadius(size.height / 2)
+                .appShadow(level: style.shadowLevel)
         }
         .buttonStyle(PlainButtonStyle())
     }
 }
 
-// MARK: - Kid-Friendly Button Variants
-struct AppKidButton: View {
-    let title: String
-    let emoji: String
-    var color: Color = .appPrimary
-    let action: () -> Void
-    
-    var body: some View {
-        AppButton(
-            title: title,
-            emoji: emoji,
-            style: .primary,
-            size: .extraLarge,
-            action: action
-        )
-        .background(
-            RoundedRectangle(cornerRadius: AppRadius.xlarge)
-                .fill(color)
-                .appKidFriendlyShadow()
-        )
-    }
-}
+// MARK: - Preview
+#Preview {
+    VStack(spacing: AppSpacing.lg) {
+        AppButton(title: "Primary Button", size: .fullWidth, style: .primary, action: {})
+        AppButton(title: "Secondary", size: .medium, style: .secondary, action: {})
+        AppButton(title: "Tertiary", size: .medium, style: .tertiary, action: {})
+        AppButton(title: "Destructive", size: .fullWidth, style: .destructive, action: {})
 
-// MARK: - Button Previews
-struct AppButton_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: AppSpacing.lg) {
-            AppButton(title: "Primary Button", emoji: "🎉", style: .primary, size: .fullWidth, action: {})
-            AppButton(title: "Secondary", icon: "star.fill", style: .secondary, size: .medium, action: {})
-            AppButton(title: "Success", style: .success, size: .large, action: {})
-            AppIconButton(icon: "heart.fill", style: .tertiary, action: {})
-            AppKidButton(title: "Kid Friendly", emoji: "🌟", color: .appSuccess, action: {})
+        HStack(spacing: AppSpacing.md) {
+            AppIconButton(icon: "heart.fill", style: .primary, action: {})
+            AppIconButton(icon: "star.fill", style: .secondary, action: {})
+            AppIconButton(icon: "xmark", style: .tertiary, action: {})
         }
-        .padding()
-        .background(Color.appBackground)
     }
+    .appPadding(.large)
+    .background(Color.appBackground)
 }

@@ -15,11 +15,11 @@ struct HomeView: View {
                     .font(.system(size: 80))
                 
                 Text("Chào mừng đến YLE X!")
-                    .font(.appHeadline)
+                    .font(.appCaptionLarge)
                     .foregroundColor(.primary)
                 
                 Text("Trang chủ đang được phát triển")
-                    .font(.appTitle)
+                    .font(.appBodyLarge)
                     .foregroundColor(.secondary)
                 
                 Spacer()
