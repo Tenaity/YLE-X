@@ -40,7 +40,7 @@ struct SignInWithAppleButton: UIViewRepresentable {
         Coordinator(self)
     }
 
-    class Coordinator: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProvider {
+    class Coordinator: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
         let parent: SignInWithAppleButton
 
         init(_ parent: SignInWithAppleButton) {
@@ -78,7 +78,7 @@ struct SignInWithAppleButton: UIViewRepresentable {
             parent.onCompletion(.failure(error))
         }
 
-        func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        @objc func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
             guard let window = UIApplication.shared.connectedScenes
                 .compactMap({ $0 as? UIWindowScene })
                 .flatMap({ $0.windows })
