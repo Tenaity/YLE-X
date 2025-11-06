@@ -8,6 +8,7 @@
 import Foundation
 import AVFoundation
 import Combine
+import FirebaseStorage
 
 // MARK: - Audio Service for Kids Learning
 class AudioService: NSObject, ObservableObject {
@@ -46,7 +47,7 @@ class AudioService: NSObject, ObservableObject {
     // MARK: - Audio Session Setup
     private func setupAudioSession() {
         do {
-            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [])
             try audioSession.setActive(true)
             print("✅ Audio session configured successfully")
         } catch {

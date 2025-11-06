@@ -1,4 +1,5 @@
 import Foundation
+import Foundation
 import Combine
 
 final class PracticeViewModel: ObservableObject {
@@ -10,8 +11,8 @@ final class PracticeViewModel: ObservableObject {
 
     func loadMock(level: YLELevel, skill: Skill) {
         exercises = [
-            Exercise(id: "1", level: level, skill: skill, question: "Chọn từ đúng: A ___ cat.", options: ["an", "a"], correctIndex: 1),
-            Exercise(id: "2", level: level, skill: skill, question: "Từ đồng nghĩa với 'small'?", options: ["tiny", "huge"], correctIndex: 0)
+            Exercise(id: "1", level: level, skill: skill, question: "Chọn từ đúng: A ___ cat.", options: ["an", "a"], correctIndex: 1, explanation: "Dùng 'a' trước danh từ bắt đầu bằng phụ âm.", audioName: "a_cat", imageName: "cat_image"),
+            Exercise(id: "2", level: level, skill: skill, question: "Từ đồng nghĩa với 'small'?", options: ["tiny", "huge"], correctIndex: 0, explanation: "'Tiny' có nghĩa là rất nhỏ, tương tự với 'small'.", audioName: "small_tiny", imageName: "small_image"),
         ]
         currentIndex = 0
         selectedIndex = nil

@@ -7,10 +7,12 @@
 
 import Foundation
 import UserNotifications
-import UIKit
+import SwiftUI
+import Combine
 
 // MARK: - Push Notification Service
 class NotificationService: NSObject, ObservableObject {
+    
     static let shared = NotificationService()
     
     @Published var isAuthorized = false
@@ -34,7 +36,7 @@ class NotificationService: NSObject, ObservableObject {
             }
             
             if granted {
-                await registerForRemoteNotifications()
+                registerForRemoteNotifications()
             }
             
             return granted
@@ -134,6 +136,32 @@ class NotificationService: NSObject, ObservableObject {
                 print("❌ Failed to schedule achievement notification: \(error.localizedDescription)")
             } else {
                 print("✅ Achievement notification scheduled for: \(badge.name)")
+            }
+        }
+    }
+    
+    // SỬA LỖI 2 (Phần A): Thêm hàm hẹn giờ 1 lần (dùng cho 'Study Later')
+    func scheduleOneTimeReminder(in timeInterval: TimeInterval, title: String, body: String, category: NotificationCategory) {
+        let content = createNotificationContent(
+            title: title,
+            body: body,
+            sound: "gentle_chime.wav",
+            category: category
+        )
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
+        
+        let request = UNNotificationRequest(
+            identifier: "one_time_reminder_\(UUID().uuidString)", // ID duy nhất
+            content: content,
+            trigger: trigger
+        )
+        
+        notificationCenter.add(request) { error in
+            if let error = error {
+                print("❌ Failed to schedule one-time reminder: \(error.localizedDescription)")
+            } else {
+                print("✅ One-time reminder scheduled for \(timeInterval) seconds from now")
             }
         }
     }
@@ -417,6 +445,9 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         let actionIdentifier = response.actionIdentifier
         let notification = response.notification
         
+        // SỬA LỖI 3: Gọi hàm analytics (vốn đã viết nhưng chưa dùng)
+        trackNotificationEngagement(notification, action: actionIdentifier)
+        
         handleNotificationResponse(actionIdentifier: actionIdentifier, notification: notification)
         
         completionHandler()
@@ -430,14 +461,15 @@ extension NotificationService: UNUserNotificationCenterDelegate {
             print("📚 User chose to study now")
             
         case "STUDY_LATER":
-            // Schedule reminder for later
-            let futureDate = Date().addingTimeInterval(2 * 60 * 60) // 2 hours later
-            scheduleStudyReminder(
-                at: futureDate,
+            // SỬA LỖI 2 (Phần B): Gọi hàm hẹn giờ 1 lần
+            // Lỗi logic cũ là 'scheduleStudyReminder' (hẹn giờ lặp lại hàng ngày)
+            scheduleOneTimeReminder(
+                in: 2 * 60 * 60, // 2 giờ (tính bằng giây)
                 title: "🔔 Nhắc nhở học tập",
-                body: "Đã đến giờ học rồi! Cùng bắt đầu nào! 📚"
+                body: "Đã đến giờ học rồi! Cùng bắt đầu nào! 📚",
+                category: .studyReminder
             )
-            print("⏰ Study reminder rescheduled")
+            print("⏰ Study reminder rescheduled for 2 hours later")
             
         case "CELEBRATE":
             // Navigate to achievements screen

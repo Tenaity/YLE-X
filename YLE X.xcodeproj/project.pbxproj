@@ -36,9 +36,37 @@
 		073971C52EA948A50079D996 /* YLE XUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "YLE XUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		078156302EBC9CDB003C1171 /* Exceptions for "YLE X" folder in "YLE X" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Shared/DesignSystem/Color+Hex.swift",
+				"Shared/Extentions/Animation+App.swift",
+				"Shared/Extentions/View+AppAccessibility.swift",
+			);
+			target = 073971AD2EA948A40079D996 /* YLE X */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		078156312EBC9CDB003C1171 /* Exceptions for "YLE X" folder in "Copy Bundle Resources" phase from "YLE X" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 073971AC2EA948A40079D996 /* Resources */;
+			membershipExceptions = (
+				"Shared/DesignSystem/Color+Hex.swift",
+				"Shared/Extentions/Animation+App.swift",
+				"Shared/Extentions/View+AppAccessibility.swift",
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		073971B02EA948A40079D996 /* YLE X */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				078156302EBC9CDB003C1171 /* Exceptions for "YLE X" folder in "YLE X" target */,
+				078156312EBC9CDB003C1171 /* Exceptions for "YLE X" folder in "Copy Bundle Resources" phase from "YLE X" target */,
+			);
 			path = "YLE X";
 			sourceTree = "<group>";
 		};

@@ -11,22 +11,6 @@ import Foundation
 import Combine
 import FirebaseAuth
 
-// MARK: - Typealiases
-/// Alias to make Firebase user usage explicit and readable
-public typealias FirebaseUser = FirebaseAuth.User
-
-// MARK: - Auth Servicing Abstraction
-/// Abstraction for authentication service to support dependency injection and testing.
-public protocol AuthServicing {
-    typealias AuthHandle = AuthStateDidChangeListenerHandle
-    func observeAuthState(_ onChange: @escaping (FirebaseUser?) -> Void) -> AuthHandle
-    func removeAuthStateListener(_ handle: AuthHandle)
-    func signOut() throws
-}
-
-// MARK: - Concrete Service Conformance
-/// Bridge the concrete AuthService to the AuthServicing protocol to use real Firebase auth.
-extension AuthService: AuthServicing {}
 
 // MARK: - SessionViewModel
 /// ViewModel responsible for observing and exposing the authenticated user session.
@@ -42,7 +26,7 @@ public final class SessionViewModel: ObservableObject {
     private let authService: AuthServicing
 
     // MARK: - Internal State
-    private var authHandle: AuthServicing.AuthHandle?
+    private var authHandle: AuthStateDidChangeListenerHandle?
 
     // MARK: - Initialization
     /// Creates a new SessionViewModel.

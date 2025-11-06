@@ -6,6 +6,10 @@
 //
 
 import SwiftUI
+import FirebaseAuth
+import Combine
+import AVFoundation
+import UserNotifications
 
 // MARK: - Onboarding Flow for Kids
 struct OnboardingView: View {
@@ -648,7 +652,7 @@ class OnboardingManager: ObservableObject {
             currentStep = nextStep
         }
         
-        AudioService.shared.playEffect(.whoosh)
+        AudioService.shared.playEffect(.buttonTap)
     }
     
     func previousStep() {
@@ -658,7 +662,7 @@ class OnboardingManager: ObservableObject {
             currentStep = previousStep
         }
         
-        AudioService.shared.playEffect(.pop)
+        AudioService.shared.playEffect(.buttonTap)
     }
     
     func selectLevel(_ level: YLELevel) {
@@ -681,7 +685,7 @@ class OnboardingManager: ObservableObject {
     }
     
     func requestMicrophonePermission() {
-        AVAudioSession.sharedInstance().requestRecordPermission { [weak self] granted in
+        AVAudioSession.sharedInstance().requestRecordPermission { [weak self] (granted: Bool) in
             DispatchQueue.main.async {
                 self?.microphonePermission = granted
                 if granted {
@@ -692,7 +696,7 @@ class OnboardingManager: ObservableObject {
     }
     
     func requestNotificationPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, _ in
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] (granted: Bool, _) in
             DispatchQueue.main.async {
                 self?.notificationPermission = granted
                 if granted {
