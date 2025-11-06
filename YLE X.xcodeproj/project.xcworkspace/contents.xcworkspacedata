@@ -4,4 +4,19 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "group:FirebaseManager.swift">
+   </FileRef>
+   <FileRef
+      location = "group:AudioService.swift">
+   </FileRef>
+   <FileRef
+      location = "group:.swift">
+   </FileRef>
+   <FileRef
+      location = "group:ContentService.swift">
+   </FileRef>
+   <FileRef
+      location = "group:ArchitectureGuide.swift">
+   </FileRef>
 </Workspace>

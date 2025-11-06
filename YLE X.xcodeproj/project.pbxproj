@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		073971DC2EA95B020079D996 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 073971DB2EA95B020079D996 /* FirebaseAnalytics */; };
+		073971DE2EA95B020079D996 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 073971DD2EA95B020079D996 /* FirebaseAuth */; };
+		073971E02EA95B020079D996 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 073971DF2EA95B020079D996 /* FirebaseFirestore */; };
+		073971E22EA95B020079D996 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 073971E12EA95B020079D996 /* FirebaseStorage */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		073971BC2EA948A50079D996 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +59,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				073971DC2EA95B020079D996 /* FirebaseAnalytics in Frameworks */,
+				073971E22EA95B020079D996 /* FirebaseStorage in Frameworks */,
+				073971DE2EA95B020079D996 /* FirebaseAuth in Frameworks */,
+				073971E02EA95B020079D996 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +123,10 @@
 			);
 			name = "YLE X";
 			packageProductDependencies = (
+				073971DB2EA95B020079D996 /* FirebaseAnalytics */,
+				073971DD2EA95B020079D996 /* FirebaseAuth */,
+				073971DF2EA95B020079D996 /* FirebaseFirestore */,
+				073971E12EA95B020079D996 /* FirebaseStorage */,
 			);
 			productName = "YLE X";
 			productReference = 073971AE2EA948A40079D996 /* YLE X.app */;
@@ -195,6 +210,9 @@
 			);
 			mainGroup = 073971A52EA948A40079D996;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				073971DA2EA95B020079D996 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 073971AF2EA948A40079D996 /* Products */;
 			projectDirPath = "";
@@ -395,11 +413,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 49372K56AS;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "YLE X";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -412,6 +433,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "tenaity.YLE-X";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -427,11 +449,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 49372K56AS;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "YLE X";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -444,6 +469,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "tenaity.YLE-X";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -578,6 +604,40 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		073971DA2EA95B020079D996 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		073971DB2EA95B020079D996 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 073971DA2EA95B020079D996 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		073971DD2EA95B020079D996 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 073971DA2EA95B020079D996 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		073971DF2EA95B020079D996 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 073971DA2EA95B020079D996 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		073971E12EA95B020079D996 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 073971DA2EA95B020079D996 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 073971A62EA948A40079D996 /* Project object */;
 }
