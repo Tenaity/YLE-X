@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct LeaderboardView: View {
     @StateObject private var viewModel = LeaderboardViewModel()
@@ -83,22 +84,16 @@ struct LeaderboardView: View {
     private var periodSelector: some View {
         HStack(spacing: AppSpacing.xs) {
             ForEach(LeaderboardPeriod.allCases, id: \.self) { period in
-                Button(action: {
-                    withAnimation(.appBouncy) {
-                        HapticManager.shared.impact(.light)
-                        selectedPeriod = period
+                PeriodButton(
+                    period: period,
+                    isSelected: selectedPeriod == period,
+                    action: {
+                        withAnimation(.appBouncy) {
+                            HapticManager.shared.playLight()
+                            selectedPeriod = period
+                        }
                     }
-                }) {
-                    Text(period.title)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(selectedPeriod == period ? .white : .appTextSecondary)
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppRadius.full)
-                                .fill(selectedPeriod == period ? Color.appAccent : Color(UIColor.tertiarySystemBackground))
-                        )
-                }
+                )
             }
         }
         .padding(AppSpacing.xs)
@@ -171,7 +166,7 @@ struct LeaderboardView: View {
         .background(
             RoundedRectangle(cornerRadius: AppRadius.lg)
                 .fill(Color(UIColor.secondarySystemBackground))
-                .appShadow(.medium)
+                .appShadow(level: .medium)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadius.lg)
                         .stroke(Color.appPrimary.opacity(0.3), lineWidth: 2)
@@ -241,7 +236,7 @@ struct PodiumCard: View {
                         )
                     )
                     .frame(width: rank == 1 ? 70 : 60, height: rank == 1 ? 70 : 60)
-                    .appShadow(.medium)
+                    .appShadow(level: .medium)
 
                 Text(user.avatar)
                     .font(.system(size: rank == 1 ? 36 : 30))
@@ -341,6 +336,27 @@ struct LeaderboardRow: View {
             RoundedRectangle(cornerRadius: AppRadius.md)
                 .fill(Color(UIColor.secondarySystemBackground))
         )
+    }
+}
+
+// MARK: - Period Button
+struct PeriodButton: View {
+    let period: LeaderboardPeriod
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(period.title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(isSelected ? .white : .appTextSecondary)
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: AppRadius.full)
+                        .fill(isSelected ? Color.appAccent : Color(UIColor.tertiarySystemBackground))
+                )
+        }
     }
 }
 
