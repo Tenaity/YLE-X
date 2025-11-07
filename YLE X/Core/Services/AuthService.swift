@@ -11,6 +11,7 @@ import FirebaseAuth
 import AuthenticationServices
 import GoogleSignIn
 import CryptoKit
+import Security
 
 // MARK: - Type Aliases
 public typealias FirebaseUser = User
@@ -24,7 +25,7 @@ public protocol AuthServicing {
     func observeAuthState(_ onChange: @escaping (FirebaseUser?) -> Void) -> AuthStateDidChangeListenerHandle
     func removeAuthStateListener(_ handle: AuthStateDidChangeListenerHandle)
     func signInWithGoogle() async throws
-    func signInWithApple(credential: ASAuthorizationAppleIDCredential) async throws
+    func signInWithApple(credential: ASAuthorizationAppleIDCredential, rawNonce: String) async throws
 }
 
 // MARK: - AuthService Implementation
@@ -129,45 +130,38 @@ public struct AuthService: AuthServicing {
     }
 
     // MARK: - Apple Sign-In
-    public func signInWithApple(credential: ASAuthorizationAppleIDCredential) async throws {
+    public func signInWithApple(credential: ASAuthorizationAppleIDCredential, rawNonce: String) async throws {
         // Get identity token
         guard let identityTokenData = credential.identityToken,
               let identityToken = String(data: identityTokenData, encoding: .utf8) else {
             throw AuthError.appleTokenNotFound
         }
 
-        // Create Firebase credential
-        // For Apple Sign-In, we use OAuthProvider with just the identity token
-        let nonce = UUID().uuidString
+        // Create Firebase credential with identity token and nonce
         let firebaseCredential = OAuthProvider.credential(
             withProviderID: "apple.com",
             idToken: identityToken,
-            rawNonce: nonce
+            rawNonce: rawNonce
         )
 
         // Sign in with Firebase
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            Auth.auth().signIn(with: firebaseCredential) { result, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else if let user = result?.user {
-                    // Update user profile with Apple-provided name if available
-                    if let fullName = credential.fullName,
-                       user.displayName?.isEmpty ?? true {
-                        let changeRequest = user.createProfileChangeRequest()
-                        changeRequest.displayName = formatAppleDisplayName(fullName)
-                        changeRequest.commitChanges { commitError in
-                            if let commitError {
-                                continuation.resume(throwing: commitError)
-                            } else {
-                                continuation.resume(returning: ())
-                            }
-                        }
-                    } else {
-                        continuation.resume(returning: ())
-                    }
-                }
+        let result = try await Auth.auth().signIn(with: firebaseCredential)
+        let user = result.user
+
+        // Update user profile with Apple-provided information if available
+        if (user.displayName?.isEmpty ?? true) || (user.email?.isEmpty ?? true) {
+            let changeRequest = user.createProfileChangeRequest()
+
+            if let fullName = credential.fullName {
+                changeRequest.displayName = formatAppleDisplayName(fullName)
             }
+
+            // Note: Apple only provides email on first sign-in
+            if let email = credential.email {
+                changeRequest.email = email
+            }
+
+            try await changeRequest.commitChanges()
         }
     }
 

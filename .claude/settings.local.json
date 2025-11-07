@@ -10,7 +10,10 @@
       "Bash(__NEW_LINE__ cd \"/Users/tenaity/Documents/YLE X\")",
       "Bash(__NEW_LINE__ echo \"=== FINAL ONBOARDING STRUCTURE ===\")",
       "Bash(find:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(swiftc -parse:*)",
+      "Bash(swift --version:*)"
     ],
     "deny": [],
     "ask": []

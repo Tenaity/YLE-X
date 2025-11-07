@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseAuth
 import AuthenticationServices
+import Combine
 
 @MainActor
 public class AuthViewModel: ObservableObject {

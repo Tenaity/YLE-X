@@ -66,15 +66,15 @@ struct SocialSignInView: View {
     }
 
     // MARK: - Apple Sign-In Handler
-    private func handleAppleSignIn(_ result: Result<ASAuthorizationAppleIDCredential, Error>) {
-        isLoading = true
-        defer { isLoading = false }
-
+    private func handleAppleSignIn(_ result: Result<(ASAuthorizationAppleIDCredential, String), Error>) {
         switch result {
-        case .success(let credential):
+        case .success((let credential, let nonce)):
             Task {
+                isLoading = true
+                defer { isLoading = false }
+
                 do {
-                    try await authViewModel.signInWithApple(credential: credential)
+                    try await authViewModel.signInWithApple(credential: credential, rawNonce: nonce)
                 } catch {
                     errorMessage = error.localizedDescription
                 }
