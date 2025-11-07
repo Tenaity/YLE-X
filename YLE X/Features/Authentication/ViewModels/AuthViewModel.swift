@@ -95,7 +95,30 @@ public class AuthViewModel: ObservableObject {
         }
     }
 
-        
+    // MARK: - Phone Number Authentication
+    public func sendPhoneVerificationCode(phoneNumber: String) async {
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            _ = try await authService.sendPhoneVerificationCode(phoneNumber: phoneNumber)
+            // VerificationID will be returned and passed to next step
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    public func signInWithPhoneVerificationCode(verificationCode: String, verificationID: String) async {
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            try await authService.signInWithPhoneVerificationCode(verificationCode: verificationCode, verificationID: verificationID)
+            await updateAuthState()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
 
     // MARK: - Private Methods
     private func setupAuthStateListener() {

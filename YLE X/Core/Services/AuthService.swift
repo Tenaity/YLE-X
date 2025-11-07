@@ -26,6 +26,8 @@ public protocol AuthServicing {
     func removeAuthStateListener(_ handle: AuthStateDidChangeListenerHandle)
     func signInWithGoogle() async throws
     func signInWithApple(credential: ASAuthorizationAppleIDCredential, rawNonce: String) async throws
+    func sendPhoneVerificationCode(phoneNumber: String) async throws -> String
+    func signInWithPhoneVerificationCode(verificationCode: String, verificationID: String) async throws
 }
 
 // MARK: - AuthService Implementation
@@ -172,6 +174,41 @@ public struct AuthService: AuthServicing {
         }
     }
     
+    // MARK: - Phone Number Authentication
+    public func sendPhoneVerificationCode(phoneNumber: String) async throws -> String {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+            PhoneAuthProvider.provider().verifyPhoneNumber(
+                phoneNumber,
+                uiDelegate: nil
+            ) { verificationID, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else if let verificationID = verificationID {
+                    continuation.resume(returning: verificationID)
+                } else {
+                    continuation.resume(throwing: AuthError.appleTokenNotFound)
+                }
+            }
+        }
+    }
+
+    public func signInWithPhoneVerificationCode(verificationCode: String, verificationID: String) async throws {
+        let credential = PhoneAuthProvider.provider().credential(
+            withVerificationID: verificationID,
+            verificationCode: verificationCode
+        )
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            Auth.auth().signIn(with: credential) { _, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
+    }
+
     // MARK: - Helper Methods
     private func formatAppleDisplayName(_ fullName: PersonNameComponents) -> String {
         var components: [String] = []
