@@ -9,7 +9,7 @@ import SwiftUI
 
 struct OTPVerificationView: View {
     let phoneNumber: String
-    let verificationID: String
+    @State var verificationID: String
 
     @StateObject private var authViewModel = AuthViewModel()
     @State private var otpCode: String = ""
@@ -166,7 +166,7 @@ struct OTPVerificationView: View {
             startResendTimer()
             // Auto-focus on the invisible text field
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder), to: nil, from: nil)
+                UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder), to: nil, from: nil, for: nil)
             }
         }
         .onDisappear {
@@ -201,7 +201,7 @@ struct OTPVerificationView: View {
     private func resendCode() {
         Task {
             if let id = await authViewModel.sendPhoneVerificationCode(phoneNumber: phoneNumber) {
-                verificationID = id
+                verificationID = id // FIX Cannot assign to property: 'self' is immutable
                 startResendTimer()
             }
         }
