@@ -130,6 +130,7 @@ struct UserLevelView: View {
 
                 // Animated Ring
                 Circle()
+                    .trim(from: 0, to: animateProgress ? 1 : 0)
                     .stroke(
                         LinearGradient(
                             colors: [.appAccent, .appBadgeGold],
@@ -139,8 +140,7 @@ struct UserLevelView: View {
                         lineWidth: 8
                     )
                     .frame(width: 200, height: 200)
-                    .trim(from: 0, to: animateProgress ? 1 : 0)
-                    .rotationEffect(.degrees(-90))
+                    .rotationEffect(Angle(degrees: -90))
 
                 // Level Number
                 VStack(spacing: AppSpacing.sm) {

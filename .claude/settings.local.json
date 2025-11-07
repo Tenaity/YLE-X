@@ -16,7 +16,10 @@
       "Bash(swift --version:*)",
       "Bash(xargs swiftc -parse)",
       "Bash(cat:*)",
-      "Bash(xcrun swiftc:*)"
+      "Bash(xcrun swiftc:*)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== Testing $f ===\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

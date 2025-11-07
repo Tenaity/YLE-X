@@ -200,7 +200,7 @@ struct MissionsView: View {
                 let progress = gamificationService.userLevel?.missionProgress[mission.id] ?? MissionProgress(missionId: mission.id, completed: 0, total: mission.requirement.value?.intValue ?? 1, isCompleted: false)
                 return progress.isCompleted
             }
-            .reduce(0) { $0 + $1.total }
+            .reduce(0) { $0 + $1.rewardXP }
     }
 
     private var streakDays: Int {
