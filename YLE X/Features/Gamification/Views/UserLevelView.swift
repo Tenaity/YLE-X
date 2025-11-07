@@ -476,7 +476,16 @@ struct StatCard: View {
     let icon: String
     let title: String
     let value: String
+    let subtitle: String?
     let color: Color
+
+    init(icon: String, title: String, value: String, subtitle: String? = nil, color: Color) {
+        self.icon = icon
+        self.title = title
+        self.value = value
+        self.subtitle = subtitle
+        self.color = color
+    }
 
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
@@ -488,7 +497,7 @@ struct StatCard: View {
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.appText)
 
-            Text(title)
+            Text(subtitle ?? title)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.appTextSecondary)
         }

@@ -15,7 +15,8 @@
       "Bash(swiftc -parse:*)",
       "Bash(swift --version:*)",
       "Bash(xargs swiftc -parse)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(xcrun swiftc:*)"
     ],
     "deny": [],
     "ask": []

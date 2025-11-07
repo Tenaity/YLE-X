@@ -68,7 +68,7 @@ class GamificationService: ObservableObject {
 
         // Haptic feedback for level up
         if level.currentLevel > oldLevel {
-            HapticManager.shared.success()
+            HapticManager.shared.playSuccess()
         }
     }
 
@@ -99,10 +99,10 @@ class GamificationService: ObservableObject {
         if let badge = availableBadges.first(where: { $0.id == badgeId }) {
             try await addXP(badge.xpReward)
             unlockedBadges[badgeId] = badge
-            HapticManager.shared.success()
+            HapticManager.shared.playSuccess()
         }
 
-        try db.collection("userLevels").document(userId).updateData([
+        try await db.collection("userLevels").document(userId).updateData([
             "badgesUnlocked": level.badgesUnlocked
         ])
     }
@@ -153,7 +153,7 @@ class GamificationService: ObservableObject {
                     try await addXP(mission.reward.xp)
                 }
 
-                HapticManager.shared.success()
+                HapticManager.shared.playSuccess()
             }
 
             level.missionProgress[missionId] = progress
@@ -183,7 +183,7 @@ class GamificationService: ObservableObject {
         try db.collection("virtualPets").document(userId).setData(from: pet)
         self.virtualPet = pet
 
-        HapticManager.shared.success()
+        HapticManager.shared.playSuccess()
     }
 
     func fetchVirtualPet() async throws {
@@ -221,7 +221,7 @@ class GamificationService: ObservableObject {
         try db.collection("virtualPets").document(userId).setData(from: pet)
         self.virtualPet = pet
 
-        HapticManager.shared.impact(.medium)
+        HapticManager.shared.playMedium()
     }
 
     // MARK: - Cleanup
@@ -231,6 +231,8 @@ class GamificationService: ObservableObject {
     }
 
     deinit {
-        stopListening()
+        // Remove listeners on cleanup
+        listeners.forEach { $0.remove() }
+        listeners.removeAll()
     }
 }
