@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct UserLevelView: View {
     @StateObject private var gamificationService = GamificationService.shared
@@ -95,12 +96,14 @@ struct UserLevelView: View {
             .navigationBarTitleDisplayMode(.large)
             .task {
                 do {
-                    try await gamificationService.initializeUserLevel()
-                    withAnimation(.appBouncy.delay(0.2)) {
-                        animateContent = true
-                    }
-                    withAnimation(.appBouncy.delay(0.5)) {
-                        animateProgress = true
+                    if let userId = Auth.auth().currentUser?.uid {
+                        try await gamificationService.initializeUserLevel(userId: userId)
+                        withAnimation(.appBouncy.delay(0.2)) {
+                            animateContent = true
+                        }
+                        withAnimation(.appBouncy.delay(0.5)) {
+                            animateProgress = true
+                        }
                     }
                 } catch {
                     print("Error loading level: \(error)")
