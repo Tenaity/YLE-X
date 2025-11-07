@@ -28,7 +28,7 @@ struct AppleSignInButton: View {
 // MARK: - Internal Apple Sign-In Button
 struct SignInWithAppleButton: UIViewRepresentable {
     let onRequest: (ASAuthorizationAppleIDRequest) -> Void
-    let onCompletion: (Result<ASAuthorizationAppleIDCredential, Error>) -> Void
+    let onCompletion: (Result<(ASAuthorizationAppleIDCredential, String), Error>) -> Void
 
     func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
         let button = ASAuthorizationAppleIDButton(type: .signIn, style: .black)
@@ -83,6 +83,7 @@ struct SignInWithAppleButton: UIViewRepresentable {
                 return
             }
 
+            // Return tuple of (credential, nonce) to parent
             parent.onCompletion(.success((appleIDCredential, nonce)))
         }
 
@@ -102,7 +103,6 @@ struct SignInWithAppleButton: UIViewRepresentable {
             }
             return window
         }
-
     }
 }
 
