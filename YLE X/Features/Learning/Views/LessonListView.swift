@@ -73,7 +73,7 @@ struct LessonListView: View {
                         isSelected: selectedLevel == level,
                         action: {
                             withAnimation(.appBouncy) {
-                                HapticManager.shared.impact(.medium)
+                                HapticManager.shared.playMedium()
                                 selectedLevel = level
                                 animateLessons = false
                                 Task {
@@ -140,7 +140,7 @@ struct LessonListView: View {
                     isLocked: shouldLockLesson(lesson),
                     progress: lessonService.getProgress(for: lesson.id ?? ""),
                     action: {
-                        HapticManager.shared.impact(.light)
+                        HapticManager.shared.playLight()
                         selectedLesson = lesson
                     }
                 )

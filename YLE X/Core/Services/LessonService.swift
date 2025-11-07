@@ -51,7 +51,7 @@ class LessonService: ObservableObject {
     }
 
     // MARK: - Fetch Exercises
-    func fetchExercises(for lessonId: String) async throws -> [Exercise] {
+    func fetchExercises(for lessonId: String) async throws -> [LessonExercise] {
         let snapshot = try await db.collection("lessons")
             .document(lessonId)
             .collection("exercises")
@@ -59,7 +59,7 @@ class LessonService: ObservableObject {
             .getDocuments()
 
         return try snapshot.documents.compactMap { doc in
-            try doc.data(as: Exercise.self)
+            try doc.data(as: LessonExercise.self)
         }
     }
 

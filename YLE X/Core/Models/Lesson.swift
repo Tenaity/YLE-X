@@ -31,8 +31,8 @@ struct Lesson: Identifiable, Codable {
     }
 }
 
-// MARK: - Exercise Model
-struct Exercise: Identifiable, Codable {
+// MARK: - Lesson Exercise Model
+struct LessonExercise: Identifiable, Codable {
     @DocumentID var id: String?
     let lessonId: String
     let type: ExerciseType

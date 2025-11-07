@@ -13,7 +13,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(swiftc -parse:*)",
-      "Bash(swift --version:*)"
+      "Bash(swift --version:*)",
+      "Bash(xargs swiftc -parse)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
