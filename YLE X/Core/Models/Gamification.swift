@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import FirebaseFirestore
 
 // MARK: - Badge Model
 struct Badge: Identifiable, Codable {
@@ -63,6 +64,12 @@ struct Badge: Identifiable, Codable {
 struct BadgeRequirement: Codable {
     let type: String
     let value: AnyCodable?
+
+    // Default initializer
+    init(type: String, value: AnyCodable? = nil) {
+        self.type = type
+        self.value = value
+    }
 
     enum CodingKeys: String, CodingKey {
         case type, value

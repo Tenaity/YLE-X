@@ -14,7 +14,9 @@ struct AppBadgeView: View {
     var size: AppBadgeSize = .medium
 
     var body: some View {
-        VStack(spacing: AppSpacing.xs) {
+        let badgeColor = Color(hex: badge.color)
+
+        return VStack(spacing: AppSpacing.xs) {
             // Emoji
             Text(badge.emoji)
                 .font(.system(size: size.emojiSize))
@@ -27,10 +29,10 @@ struct AppBadgeView: View {
         }
         .frame(width: size.width, height: size.height)
         .padding(size.padding)
-        .background(badge.color.opacity(0.1))
+        .background(badgeColor.opacity(0.1))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(badge.color, lineWidth: 1.5)
+                .stroke(badgeColor, lineWidth: 1.5)
         )
         .cornerRadius(AppRadius.md)
         .appShadow(level: .subtle)
