@@ -82,7 +82,7 @@ struct BadgeGalleryView: View {
                                     spacing: AppSpacing.md
                                 ) {
                                     ForEach(Array(unlockedBadges.enumerated()), id: \.element.id) { index, badge in
-                                        BadgeCard(badge: badge, isUnlocked: true) {
+                                        GamificationBadgeCard(badge: badge, isUnlocked: true) {
                                             HapticManager.shared.playLight()
                                             selectedBadge = badge
                                         }
@@ -108,7 +108,7 @@ struct BadgeGalleryView: View {
                                     spacing: AppSpacing.md
                                 ) {
                                     ForEach(Array(lockedBadges.enumerated()), id: \.element.id) { index, badge in
-                                        BadgeCard(badge: badge, isUnlocked: false) {
+                                        GamificationBadgeCard(badge: badge, isUnlocked: false) {
                                             HapticManager.shared.playLight()
                                             selectedBadge = badge
                                         }
@@ -143,8 +143,8 @@ struct BadgeGalleryView: View {
     }
 }
 
-// MARK: - Badge Card
-struct BadgeCard: View {
+// MARK: - Gamification Badge Card
+struct GamificationBadgeCard: View {
     let badge: Badge
     let isUnlocked: Bool
     let action: () -> Void

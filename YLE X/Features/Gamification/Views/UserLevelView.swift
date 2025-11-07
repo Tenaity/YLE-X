@@ -365,7 +365,7 @@ struct UserLevelView: View {
 
             HStack(spacing: AppSpacing.md) {
                 // Total XP
-                StatCard(
+                LevelStatCard(
                     icon: "star.fill",
                     title: "Total XP",
                     value: "\(userLevel?.totalXP ?? 0)",
@@ -373,7 +373,7 @@ struct UserLevelView: View {
                 )
 
                 // Badges Earned
-                StatCard(
+                LevelStatCard(
                     icon: "shield.fill",
                     title: "Badges",
                     value: "\((userLevel?.badgesUnlocked.count ?? 0))/9",
@@ -471,21 +471,12 @@ struct LevelUpAnimationView: View {
     }
 }
 
-// MARK: - Stat Card
-struct StatCard: View {
+// MARK: - Level Stat Card
+struct LevelStatCard: View {
     let icon: String
     let title: String
     let value: String
-    let subtitle: String?
     let color: Color
-
-    init(icon: String, title: String, value: String, subtitle: String? = nil, color: Color) {
-        self.icon = icon
-        self.title = title
-        self.value = value
-        self.subtitle = subtitle
-        self.color = color
-    }
 
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
@@ -497,7 +488,7 @@ struct StatCard: View {
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.appText)
 
-            Text(subtitle ?? title)
+            Text(title)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.appTextSecondary)
         }

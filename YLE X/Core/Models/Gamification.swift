@@ -42,6 +42,22 @@ struct Badge: Identifiable, Codable {
             }
         }
     }
+
+    // Sample badge for preview
+    static func sampleBadge(level: String = "appBadgeStarters") -> Badge {
+        Badge(
+            id: UUID().uuidString,
+            name: "Achievement",
+            description: "Sample achievement badge",
+            icon: "star",
+            emoji: "⭐️",
+            rarity: .common,
+            color: "#FFD700",
+            requirement: BadgeRequirement(type: "sample", value: nil),
+            xpReward: 50,
+            unlockedAt: Date()
+        )
+    }
 }
 
 struct BadgeRequirement: Codable {
