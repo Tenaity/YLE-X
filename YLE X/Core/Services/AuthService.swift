@@ -183,19 +183,22 @@ public struct AuthService: AuthServicing {
         let user = result.user
 
         // Update user profile with Apple-provided information if available
-        if (user.displayName?.isEmpty ?? true) || (user.email?.isEmpty ?? true) {
+        if user.displayName?.isEmpty ?? true {
             let changeRequest = user.createProfileChangeRequest()
 
             if let fullName = credential.fullName {
                 changeRequest.displayName = formatAppleDisplayName(fullName)
             }
 
-            // Note: Apple only provides email on first sign-in
-            if let email = credential.email {
-                changeRequest.email = email
-            }
-
             try await changeRequest.commitChanges()
+        }
+
+        // Note: Firebase doesn't allow updating email via profile change request
+        // Email is managed separately through Firebase Authentication
+        // Apple provides email only on first sign-in
+        if user.email?.isEmpty ?? true, let email = credential.email {
+            // Email is already set by Firebase during sign-in with Apple credential
+            // No additional action needed
         }
     }
     
