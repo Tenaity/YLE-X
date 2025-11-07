@@ -138,29 +138,8 @@ struct SocialSignInView: View {
     // MARK: - Phone Sign-In Content
     @ViewBuilder
     private var phoneSignInContent: some View {
-        VStack(spacing: AppSpacing.lg) {
-            // Info message
-            HStack(spacing: AppSpacing.md) {
-                Image(systemName: "phone.fill")
-                    .foregroundColor(.appSuccess)
-                    .font(.system(size: 16))
-
-                Text("Secure verification via SMS")
-                    .appBodySmall()
-                    .foregroundColor(.appTextSecondary)
-            }
-            .padding(AppSpacing.md)
-            .background(Color.appSuccess.opacity(0.1))
-            .cornerRadius(AppRadius.md)
-            .padding(.horizontal, AppSpacing.lg)
-
-            Text("Phone sign-in is coming soon")
-                .appBodyMedium()
-                .foregroundColor(.appTextSecondary)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, AppSpacing.xl)
-
-            Spacer()
+        NavigationStack {
+            PhoneNumberInputView()
         }
     }
 
