@@ -17,7 +17,7 @@ public class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
-    private let authService: AuthServicing
+    let authService: AuthServicing
     private var authStateListener: AuthStateDidChangeListenerHandle?
 
     public init(authService: AuthServicing = AuthService()) {
@@ -96,15 +96,16 @@ public class AuthViewModel: ObservableObject {
     }
 
     // MARK: - Phone Number Authentication
-    public func sendPhoneVerificationCode(phoneNumber: String) async {
+    public func sendPhoneVerificationCode(phoneNumber: String) async -> String? {
         isLoading = true
         defer { isLoading = false }
 
         do {
-            _ = try await authService.sendPhoneVerificationCode(phoneNumber: phoneNumber)
-            // VerificationID will be returned and passed to next step
+            let verificationID = try await authService.sendPhoneVerificationCode(phoneNumber: phoneNumber)
+            return verificationID
         } catch {
             errorMessage = error.localizedDescription
+            return nil
         }
     }
 

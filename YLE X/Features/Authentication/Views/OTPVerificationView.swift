@@ -199,19 +199,11 @@ struct OTPVerificationView: View {
     }
 
     private func resendCode() {
-        isLoading = true
-        errorMessage = nil
-        remainingSeconds = 60
-        canResend = false
-
         Task {
-            do {
-                _ = try await authViewModel.authService.sendPhoneVerificationCode(phoneNumber: phoneNumber)
+            if let id = await authViewModel.sendPhoneVerificationCode(phoneNumber: phoneNumber) {
+                verificationID = id
                 startResendTimer()
-            } catch {
-                errorMessage = error.localizedDescription
             }
-            isLoading = false
         }
     }
 

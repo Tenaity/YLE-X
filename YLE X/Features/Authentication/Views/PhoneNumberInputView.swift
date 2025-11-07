@@ -153,20 +153,13 @@ struct PhoneNumberInputView: View {
             return
         }
 
-        isLoading = true
-        errorMessage = nil
-
         let fullPhoneNumber = countryCode + phoneNumber
 
         Task {
-            do {
-                let id = try await authViewModel.authService.sendPhoneVerificationCode(phoneNumber: fullPhoneNumber)
+            if let id = await authViewModel.sendPhoneVerificationCode(phoneNumber: fullPhoneNumber) {
                 verificationID = id
                 showOTPInput = true
-            } catch {
-                errorMessage = error.localizedDescription
             }
-            isLoading = false
         }
     }
 }
