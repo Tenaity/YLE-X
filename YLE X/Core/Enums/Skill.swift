@@ -16,7 +16,9 @@ enum Skill: String, CaseIterable, Identifiable, Codable {
     case grammar = "Grammar"
     
     var id: String { rawValue }
-    
+
+    var title: String { rawValue }
+
     var icon: String {
         switch self {
         case .listening:

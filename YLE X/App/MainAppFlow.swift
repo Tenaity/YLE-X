@@ -7,7 +7,7 @@ struct MainAppFlow: View {
     var body: some View {
         Group {
             if session.user != nil {
-                HomeView()
+                TabBarView()
             } else {
                 AuthFlowView()
             }
