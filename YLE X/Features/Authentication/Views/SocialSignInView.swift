@@ -20,7 +20,7 @@ struct SocialSignInView: View {
             VStack(spacing: AppSpacing.sm) {
                 Text("Welcome Back")
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.appTextPrimary)
+                    .foregroundColor(.appText)
 
                 Text("Choose your preferred sign-in method")
                     .appBodyMedium()
@@ -73,7 +73,7 @@ struct SocialSignInView: View {
             // Info message
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "info.circle.fill")
-                    .foregroundColor(.appBlue)
+                    .foregroundColor(.appPrimary)
                     .font(.system(size: 16))
 
                 Text("Sign in is coming soon for Google and Apple")
@@ -81,7 +81,7 @@ struct SocialSignInView: View {
                     .foregroundColor(.appTextSecondary)
             }
             .padding(AppSpacing.md)
-            .background(Color.appBlue.opacity(0.1))
+            .background(Color.appPrimary.opacity(0.1))
             .cornerRadius(AppRadius.md)
             .padding(.horizontal, AppSpacing.lg)
 
@@ -142,7 +142,7 @@ struct SocialSignInView: View {
             // Info message
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "phone.fill")
-                    .foregroundColor(.appGreen)
+                    .foregroundColor(.appSuccess)
                     .font(.system(size: 16))
 
                 Text("Secure verification via SMS")
@@ -150,7 +150,7 @@ struct SocialSignInView: View {
                     .foregroundColor(.appTextSecondary)
             }
             .padding(AppSpacing.md)
-            .background(Color.appGreen.opacity(0.1))
+            .background(Color.appSuccess.opacity(0.1))
             .cornerRadius(AppRadius.md)
             .padding(.horizontal, AppSpacing.lg)
 
@@ -216,11 +216,11 @@ struct TabButton: View {
             VStack(spacing: 0) {
                 Text(title)
                     .appBodyMedium()
-                    .foregroundColor(isSelected ? .appBlue : .appTextSecondary)
+                    .foregroundColor(isSelected ? .appPrimary : .appTextSecondary)
 
                 if isSelected {
                     Capsule()
-                        .fill(Color.appBlue)
+                        .fill(Color.appPrimary)
                         .frame(height: 3)
                         .padding(.top, AppSpacing.sm)
                 } else {
