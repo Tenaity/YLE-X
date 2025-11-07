@@ -31,12 +31,12 @@ public protocol AuthServicing {
 // MARK: - AuthService Implementation
 public struct AuthService: AuthServicing {
     public init() {}
-
+    
     // MARK: - Auth State
     public var currentUser: FirebaseUser? {
         Auth.auth().currentUser
     }
-
+    
     // MARK: - Email/Password Authentication
     public func signIn(email: String, password: String) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -49,7 +49,7 @@ public struct AuthService: AuthServicing {
             }
         }
     }
-
+    
     public func signUp(email: String, password: String, displayName: String) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             Auth.auth().createUser(withEmail: email, password: password) { result, error in
@@ -75,22 +75,22 @@ public struct AuthService: AuthServicing {
             }
         }
     }
-
+    
     public func signOut() throws {
         try Auth.auth().signOut()
     }
-
+    
     // MARK: - Auth State Observation
     public func observeAuthState(_ onChange: @escaping (FirebaseUser?) -> Void) -> AuthStateDidChangeListenerHandle {
         Auth.auth().addStateDidChangeListener { _, user in
             onChange(user)
         }
     }
-
+    
     public func removeAuthStateListener(_ handle: AuthStateDidChangeListenerHandle) {
         Auth.auth().removeStateDidChangeListener(handle)
     }
-
+    
     // MARK: - Google Sign-In
     public func signInWithGoogle() async throws {
         // Get the root view controller for presenting sign-in flow
@@ -98,25 +98,25 @@ public struct AuthService: AuthServicing {
               let rootViewController = windowScene.windows.first?.rootViewController else {
             throw AuthError.viewControllerNotFound
         }
-
+        
         // Perform Google Sign-In
         let result = try await GIDSignIn.sharedInstance.signIn(
             withPresenting: rootViewController
         )
-
+        
         // Get ID token and access token
         guard let idToken = result.user.idToken?.tokenString else {
             throw AuthError.googleTokenNotFound
         }
-
+        
         let accessToken = result.user.accessToken.tokenString
-
+        
         // Create Firebase credential
         let credential = GoogleAuthProvider.credential(
             withIDToken: idToken,
             accessToken: accessToken
         )
-
+        
         // Sign in with Firebase
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             Auth.auth().signIn(with: credential) { _, error in
@@ -128,20 +128,54 @@ public struct AuthService: AuthServicing {
             }
         }
     }
-
+    
     // MARK: - Apple Sign-In
+    private func randomNonceString(length: Int = 32) -> String {
+      precondition(length > 0)
+      var randomBytes = [UInt8](repeating: 0, count: length)
+      let errorCode = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+      if errorCode != errSecSuccess {
+        fatalError(
+          "Unable to generate nonce. SecRandomCopyBytes failed with OSStatus \(errorCode)"
+        )
+      }
+
+      let charset: [Character] =
+        Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+
+      let nonce = randomBytes.map { byte in
+        // Pick a random character from the set, wrapping around if needed.
+        charset[Int(byte) % charset.count]
+      }
+
+      return String(nonce)
+    }
+    
+    @available(iOS 13, *)
+    private func sha256(_ input: String) -> String {
+      let inputData = Data(input.utf8)
+      let hashedData = SHA256.hash(data: inputData)
+      let hashString = hashedData.compactMap {
+        String(format: "%02x", $0)
+      }.joined()
+
+      return hashString
+    }
+
+
     public func signInWithApple(credential: ASAuthorizationAppleIDCredential, rawNonce: String) async throws {
-        // Get identity token
+        // Get identity token from credential
         guard let identityTokenData = credential.identityToken,
               let identityToken = String(data: identityTokenData, encoding: .utf8) else {
             throw AuthError.appleTokenNotFound
         }
 
-        // Create Firebase credential with identity token and nonce
-        let firebaseCredential = OAuthProvider.credential(
-            withProviderID: "apple.com",
-            idToken: identityToken,
-            rawNonce: rawNonce
+        // Create Firebase credential with identity token and raw nonce
+        // Note: rawNonce is the unhashed nonce, NOT the SHA256 hashed version
+        let firebaseCredential = OAuthProvider.appleCredential(
+            withIDToken: identityToken,
+            rawNonce: rawNonce,
+            fullName: credential.fullName
         )
 
         // Sign in with Firebase
@@ -164,7 +198,7 @@ public struct AuthService: AuthServicing {
             try await changeRequest.commitChanges()
         }
     }
-
+    
     // MARK: - Helper Methods
     private func formatAppleDisplayName(_ fullName: PersonNameComponents) -> String {
         var components: [String] = []
@@ -186,7 +220,7 @@ public enum AuthError: LocalizedError {
     case googleTokenNotFound
     case appleTokenNotFound
     case firebaseSignInFailed(String)
-
+    
     public var errorDescription: String? {
         switch self {
         case .userCreationFailed:

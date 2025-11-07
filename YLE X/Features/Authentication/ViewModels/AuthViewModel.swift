@@ -88,7 +88,7 @@ public class AuthViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            try await authService.signInWithApple(credential: credential)
+            try await authService.signInWithApple(credential: credential, rawNonce: nonce)
             await updateAuthState()
         } catch {
             errorMessage = error.localizedDescription
