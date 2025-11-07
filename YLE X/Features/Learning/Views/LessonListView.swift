@@ -6,17 +6,38 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct LessonListView: View {
     @StateObject private var lessonService = LessonService.shared
     @State private var selectedLevel: YLELevel = .starters
     @State private var animateLessons = false
     @State private var selectedLesson: Lesson?
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppSpacing.xl) {
+                    // Error Message (if any)
+                    if let error = errorMessage {
+                        VStack(spacing: AppSpacing.sm) {
+                            HStack {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundColor(.appError)
+                                Text(error)
+                                    .foregroundColor(.appError)
+                                    .font(.system(size: 14, weight: .semibold))
+                                Spacer()
+                            }
+                            .padding(AppSpacing.md)
+                            .background(
+                                RoundedRectangle(cornerRadius: AppRadius.lg)
+                                    .fill(Color.appError.opacity(0.1))
+                            )
+                        }
+                    }
+
                     // Level Selector
                     levelSelector
 
@@ -26,7 +47,28 @@ struct LessonListView: View {
                         .offset(y: animateLessons ? 0 : 20)
 
                     // Lesson Map
-                    lessonsSection
+                    if lessonService.lessons.isEmpty && errorMessage != nil {
+                        VStack(spacing: AppSpacing.md) {
+                            Image(systemName: "book.fill")
+                                .font(.system(size: 48))
+                                .foregroundColor(.appTextSecondary)
+                            Text("No Lessons Found")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.appText)
+                            Text("Make sure lessons are added to Firebase for \(selectedLevel.title)")
+                                .font(.system(size: 14))
+                                .foregroundColor(.appTextSecondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(AppSpacing.xl)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppRadius.xl)
+                                .fill(Color(UIColor.secondarySystemBackground))
+                        )
+                    } else {
+                        lessonsSection
+                    }
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, AppSpacing.xl)
@@ -49,15 +91,43 @@ struct LessonListView: View {
             }
             .task {
                 do {
+                    print("[LessonListView] Fetching lessons for level: \(selectedLevel.rawValue.lowercased())")
                     try await lessonService.fetchLessons(for: selectedLevel)
-                    try await lessonService.fetchUserProgress()
+                    print("[LessonListView] Lessons fetched: \(lessonService.lessons.count)")
+
+                    // Ensure user is authenticated before fetching user progress
+                    if Auth.auth().currentUser == nil {
+                        print("[LessonListView] No user signed in. Signing in anonymously...")
+                        do {
+                            _ = try await Auth.auth().signInAnonymously()
+                            print("[LessonListView] Anonymous sign-in successful")
+                        } catch {
+                            print("[LessonListView] Anonymous sign-in failed: \(error)")
+                        }
+                    }
+
+                    do {
+                        try await lessonService.fetchUserProgress()
+                        print("[LessonListView] User progress fetched: \(lessonService.userProgress.count)")
+                    } catch {
+                        print("[LessonListView] fetchUserProgress error: \(error)")
+                    }
+
                     lessonService.startListeningToProgress()
+                    print("[LessonListView] Started listening to progress")
+
+                    // Clear error if lessons loaded successfully
+                    if !lessonService.lessons.isEmpty {
+                        errorMessage = nil
+                    }
 
                     withAnimation(.appBouncy.delay(0.2)) {
                         animateLessons = true
                     }
                 } catch {
-                    print("Error loading lessons: \(error)")
+                    let errorMsg = "Failed to load lessons: \(error.localizedDescription)"
+                    print("[LessonListView] Error loading lessons: \(errorMsg)")
+                    errorMessage = errorMsg
                 }
             }
         }
@@ -76,8 +146,16 @@ struct LessonListView: View {
                                 HapticManager.shared.playMedium()
                                 selectedLevel = level
                                 animateLessons = false
+                                errorMessage = nil
                                 Task {
-                                    try? await lessonService.fetchLessons(for: level)
+                                    do {
+                                        try await lessonService.fetchLessons(for: level)
+                                        if !lessonService.lessons.isEmpty {
+                                            errorMessage = nil
+                                        }
+                                    } catch {
+                                        errorMessage = "Failed to load lessons for \(level.title)"
+                                    }
                                     withAnimation(.appBouncy.delay(0.1)) {
                                         animateLessons = true
                                     }

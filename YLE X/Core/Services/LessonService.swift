@@ -30,14 +30,23 @@ class LessonService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
+        let levelQuery = level.rawValue.lowercased()
+        print("[LessonService] Fetching lessons for level: \(levelQuery)")
+
         let snapshot = try await db.collection("lessons")
-            .whereField("level", isEqualTo: level.rawValue.lowercased())
+            .whereField("level", isEqualTo: levelQuery)
             .order(by: "order")
             .getDocuments()
 
+        print("[LessonService] Query returned \(snapshot.documents.count) documents")
+
         let lessons = try snapshot.documents.compactMap { doc -> Lesson? in
-            try doc.data(as: Lesson.self)
+            let data = doc.data()
+            print("[LessonService] Document data: \(data)")
+            return try doc.data(as: Lesson.self)
         }
+
+        print("[LessonService] Successfully parsed \(lessons.count) lessons")
 
         // Cache lessons
         lessons.forEach { lesson in
@@ -101,7 +110,7 @@ class LessonService: ObservableObject {
             exercisesCompleted: []  // Will be updated during exercise flow
         )
 
-        try await db.collection("userProgress")
+        try db.collection("userProgress")
             .document(userId)
             .collection("lessons")
             .document(lessonId)

@@ -13,7 +13,7 @@ struct HomeView: View {
     @State private var showLevelDetail = false
     @State private var animateCards = false
     @State private var animateHeader = false
-
+    
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
@@ -22,27 +22,27 @@ struct HomeView: View {
                     headerSection
                         .opacity(animateHeader ? 1 : 0)
                         .offset(y: animateHeader ? 0 : -20)
-
+                    
                     // Daily Progress Card
                     dailyProgressCard
                         .opacity(animateCards ? 1 : 0)
                         .offset(y: animateCards ? 0 : 20)
-
+                    
                     // Level Selection Section
                     levelSelectionSection
                         .opacity(animateCards ? 1 : 0)
                         .offset(y: animateCards ? 0 : 30)
-
+                    
                     // Quick Actions
                     quickActionsSection
                         .opacity(animateCards ? 1 : 0)
                         .offset(y: animateCards ? 0 : 40)
-
+                    
                     // Skills Practice
                     skillsPracticeSection
                         .opacity(animateCards ? 1 : 0)
                         .offset(y: animateCards ? 0 : 50)
-
+                    
                     // Recent Achievements
                     achievementsSection
                         .opacity(animateCards ? 1 : 0)
@@ -64,24 +64,26 @@ struct HomeView: View {
             )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .principal) {
                     HStack(spacing: AppSpacing.sm) {
+                        
                         Text("🎓")
                             .font(.system(size: 32))
-
+                        
                         VStack(alignment: .leading, spacing: 2) {
                             Text("YLE X")
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundColor(.appPrimary)
-
+                            
                             Text("Learn English Fun!")
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(.appTextSecondary)
                         }
+                        
                     }
                 }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
+                
+                ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: AppSpacing.sm) {
                         // Streak badge
                         HStack(spacing: 4) {
@@ -95,7 +97,7 @@ struct HomeView: View {
                         .padding(.vertical, 6)
                         .background(Color.appAccent.opacity(0.15))
                         .cornerRadius(AppRadius.full)
-
+                        
                         // Notification bell
                         Button(action: {}) {
                             Image(systemName: "bell.fill")
@@ -115,21 +117,21 @@ struct HomeView: View {
             }
         }
     }
-
+    
     // MARK: - Header Section
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Hello, \(viewModel.userName)! 👋")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.appText)
-
+            
             Text("Ready to learn something new today?")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.appTextSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-
+    
     // MARK: - Daily Progress Card
     private var dailyProgressCard: some View {
         VStack(spacing: AppSpacing.md) {
@@ -138,20 +140,20 @@ struct HomeView: View {
                     Text("Today's Goal")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.appTextSecondary)
-
+                    
                     Text("\(viewModel.todayMinutes) / \(viewModel.dailyGoal) mins")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.appPrimary)
                 }
-
+                
                 Spacer()
-
+                
                 // Circular progress
                 ZStack {
                     Circle()
                         .stroke(Color.appPrimary.opacity(0.2), lineWidth: 8)
                         .frame(width: 70, height: 70)
-
+                    
                     Circle()
                         .trim(from: 0, to: viewModel.dailyProgress)
                         .stroke(
@@ -165,33 +167,33 @@ struct HomeView: View {
                         .frame(width: 70, height: 70)
                         .rotationEffect(.degrees(-90))
                         .animation(.appBouncy, value: viewModel.dailyProgress)
-
+                    
                     Text("\(Int(viewModel.dailyProgress * 100))%")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.appPrimary)
                 }
             }
-
+            
             // XP Progress bar
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 HStack {
                     Text("⭐️ \(viewModel.totalXP) XP")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.appAccent)
-
+                    
                     Spacer()
-
+                    
                     Text("\(viewModel.xpToNextLevel) to next level")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.appTextSecondary)
                 }
-
+                
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: AppRadius.full)
                             .fill(Color.appAccent.opacity(0.2))
                             .frame(height: 8)
-
+                        
                         RoundedRectangle(cornerRadius: AppRadius.full)
                             .fill(
                                 LinearGradient(
@@ -214,7 +216,7 @@ struct HomeView: View {
                 .appShadow(level: .medium)
         )
     }
-
+    
     // MARK: - Level Selection Section
     private var levelSelectionSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -222,16 +224,16 @@ struct HomeView: View {
                 Text("Choose Your Level")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.appText)
-
+                
                 Spacer()
-
+                
                 Button(action: {}) {
                     Text("View All")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.appPrimary)
                 }
             }
-
+            
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.md) {
                     ForEach(YLELevel.allCases, id: \.self) { level in
@@ -247,14 +249,14 @@ struct HomeView: View {
             }
         }
     }
-
+    
     // MARK: - Quick Actions
     private var quickActionsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("Quick Actions")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundColor(.appText)
-
+            
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.md) {
                 QuickActionCard(
                     icon: "play.circle.fill",
@@ -263,7 +265,7 @@ struct HomeView: View {
                     color: .appPrimary,
                     action: {}
                 )
-
+                
                 QuickActionCard(
                     icon: "chart.bar.fill",
                     title: "Daily Challenge",
@@ -271,7 +273,7 @@ struct HomeView: View {
                     color: .appAccent,
                     action: {}
                 )
-
+                
                 QuickActionCard(
                     icon: "book.fill",
                     title: "Vocabulary",
@@ -279,7 +281,7 @@ struct HomeView: View {
                     color: .appSkillVocabulary,
                     action: {}
                 )
-
+                
                 QuickActionCard(
                     icon: "mic.fill",
                     title: "Speaking",
@@ -290,7 +292,7 @@ struct HomeView: View {
             }
         }
     }
-
+    
     // MARK: - Skills Practice
     private var skillsPracticeSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -298,9 +300,9 @@ struct HomeView: View {
                 Text("Skills Practice")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.appText)
-
+                
                 Spacer()
-
+                
                 Button(action: {}) {
                     HStack(spacing: 4) {
                         Text("See All")
@@ -311,7 +313,7 @@ struct HomeView: View {
                     .foregroundColor(.appPrimary)
                 }
             }
-
+            
             VStack(spacing: AppSpacing.sm) {
                 ForEach(Skill.allCases.prefix(4), id: \.self) { skill in
                     SkillRow(skill: skill, progress: viewModel.getSkillProgress(skill))
@@ -319,7 +321,7 @@ struct HomeView: View {
             }
         }
     }
-
+    
     // MARK: - Achievements Section
     private var achievementsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -327,16 +329,16 @@ struct HomeView: View {
                 Text("Recent Achievements")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.appText)
-
+                
                 Spacer()
-
+                
                 Button(action: {}) {
                     Text("View All")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.appPrimary)
                 }
             }
-
+            
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.md) {
                     ForEach(viewModel.recentBadges, id: \.id) { badge in
@@ -353,7 +355,7 @@ struct HomeView: View {
 struct LevelCard: View {
     let level: YLELevel
     let isSelected: Bool
-
+    
     var body: some View {
         VStack(spacing: AppSpacing.md) {
             ZStack {
@@ -370,18 +372,18 @@ struct LevelCard: View {
                     )
                     .frame(width: 80, height: 80)
                     .appShadow(level: isSelected ? .medium : .light)
-
+                
                 Text(level.emoji)
                     .font(.system(size: 40))
             }
             .scaleEffect(isSelected ? 1.1 : 1.0)
             .animation(.appBouncy, value: isSelected)
-
+            
             VStack(spacing: 4) {
                 Text(level.title)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.appText)
-
+                
                 Text(level.ageRange)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.appTextSecondary)
@@ -407,9 +409,9 @@ struct QuickActionCard: View {
     let subtitle: String
     let color: Color
     let action: () -> Void
-
+    
     @State private var isPressed = false
-
+    
     var body: some View {
         Button(action: {
             HapticManager.shared.playLight()
@@ -422,12 +424,12 @@ struct QuickActionCard: View {
                     .frame(width: 50, height: 50)
                     .background(color.opacity(0.15))
                     .cornerRadius(AppRadius.md)
-
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.appText)
-
+                    
                     Text(subtitle)
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.appTextSecondary)
@@ -459,7 +461,7 @@ struct QuickActionCard: View {
 struct SkillRow: View {
     let skill: Skill
     let progress: Double
-
+    
     var body: some View {
         HStack(spacing: AppSpacing.md) {
             Text(skill.emoji)
@@ -467,18 +469,18 @@ struct SkillRow: View {
                 .frame(width: 50, height: 50)
                 .background(skill.color.opacity(0.15))
                 .cornerRadius(AppRadius.md)
-
+            
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(skill.title)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.appText)
-
+                
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: AppRadius.full)
                             .fill(skill.color.opacity(0.2))
                             .frame(height: 6)
-
+                        
                         RoundedRectangle(cornerRadius: AppRadius.full)
                             .fill(skill.color)
                             .frame(width: geometry.size.width * progress, height: 6)
@@ -487,7 +489,7 @@ struct SkillRow: View {
                 }
                 .frame(height: 6)
             }
-
+            
             Text("\(Int(progress * 100))%")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundColor(skill.color)
@@ -504,7 +506,7 @@ struct SkillRow: View {
 // MARK: - Achievement Badge
 struct AchievementBadge: View {
     let badge: BadgeItem
-
+    
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
             ZStack {
@@ -518,11 +520,11 @@ struct AchievementBadge: View {
                     )
                     .frame(width: 70, height: 70)
                     .appShadow(level: .medium)
-
+                
                 Text(badge.emoji)
                     .font(.system(size: 32))
             }
-
+            
             Text(badge.name)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.appText)
@@ -555,3 +557,4 @@ struct BadgeItem: Identifiable {
 #Preview {
     HomeView()
 }
+

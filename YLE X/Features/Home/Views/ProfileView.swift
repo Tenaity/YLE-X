@@ -31,15 +31,20 @@ struct ProfileView: View {
                         .opacity(animateContent ? 1 : 0)
                         .offset(y: animateContent ? 0 : 30)
 
+                    // Gamification Section
+                    gamificationSection
+                        .opacity(animateContent ? 1 : 0)
+                        .offset(y: animateContent ? 0 : 40)
+
                     // Activity Chart
                     activitySection
                         .opacity(animateContent ? 1 : 0)
-                        .offset(y: animateContent ? 0 : 40)
+                        .offset(y: animateContent ? 0 : 50)
 
                     // Settings
                     settingsSection
                         .opacity(animateContent ? 1 : 0)
-                        .offset(y: animateContent ? 0 : 50)
+                        .offset(y: animateContent ? 0 : 60)
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, AppSpacing.xl)
@@ -271,6 +276,78 @@ struct ProfileView: View {
                     .fill(Color(UIColor.secondarySystemBackground))
             )
         }
+    }
+
+    // MARK: - Gamification Section
+    private var gamificationSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Gamification")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.appText)
+
+            HStack(spacing: AppSpacing.md) {
+                NavigationLink(destination: UserLevelView()) {
+                    gamificationCard(
+                        icon: "levelstars.fill",
+                        title: "My Level",
+                        subtitle: "Level \(viewModel.userLevel)",
+                        color: .appAccent
+                    )
+                }
+
+                NavigationLink(destination: BadgeGalleryView()) {
+                    gamificationCard(
+                        icon: "star.circle.fill",
+                        title: "Badges",
+                        subtitle: "\(viewModel.totalBadges) earned",
+                        color: .appBadgeGold
+                    )
+                }
+            }
+
+            HStack(spacing: AppSpacing.md) {
+                NavigationLink(destination: MissionsView()) {
+                    gamificationCard(
+                        icon: "target",
+                        title: "Missions",
+                        subtitle: "Daily quests",
+                        color: .appPrimary
+                    )
+                }
+
+                NavigationLink(destination: PetCompanionView()) {
+                    gamificationCard(
+                        icon: "heart.circle.fill",
+                        title: "Pet",
+                        subtitle: "My companion",
+                        color: .appSuccess
+                    )
+                }
+            }
+        }
+    }
+
+    private func gamificationCard(icon: String, title: String, subtitle: String, color: Color) -> some View {
+        VStack(spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 32, weight: .bold))
+                .foregroundColor(color)
+
+            Text(title)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.appText)
+
+            Text(subtitle)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.appTextSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .fill(Color(UIColor.secondarySystemBackground))
+                .appShadow(level: .light)
+        )
     }
 
     // MARK: - Settings Section
