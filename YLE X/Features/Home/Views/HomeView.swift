@@ -211,7 +211,7 @@ struct HomeView: View {
         .background(
             RoundedRectangle(cornerRadius: AppRadius.xl)
                 .fill(Color(UIColor.secondarySystemBackground))
-                .appShadow(.medium)
+                .appShadow(level: .medium)
         )
     }
 
@@ -238,7 +238,7 @@ struct HomeView: View {
                         LevelCard(level: level, isSelected: viewModel.currentLevel == level)
                             .onTapGesture {
                                 withAnimation(.appBouncy) {
-                                    HapticManager.shared.impact(.medium)
+                                    HapticManager.shared.playLight()
                                     viewModel.selectLevel(level)
                                 }
                             }
@@ -369,7 +369,7 @@ struct LevelCard: View {
                         )
                     )
                     .frame(width: 80, height: 80)
-                    .appShadow(isSelected ? .medium : .light)
+                    .appShadow(level: isSelected ? .medium : .light)
 
                 Text(level.emoji)
                     .font(.system(size: 40))
@@ -412,7 +412,7 @@ struct QuickActionCard: View {
 
     var body: some View {
         Button(action: {
-            HapticManager.shared.impact(.light)
+            HapticManager.shared.playLight()
             action()
         }) {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -438,7 +438,7 @@ struct QuickActionCard: View {
             .background(
                 RoundedRectangle(cornerRadius: AppRadius.lg)
                     .fill(Color(UIColor.secondarySystemBackground))
-                    .appShadow(.light)
+                    .appShadow(level: .light)
             )
             .scaleEffect(isPressed ? 0.95 : 1.0)
         }
@@ -517,7 +517,7 @@ struct AchievementBadge: View {
                         )
                     )
                     .frame(width: 70, height: 70)
-                    .appShadow(.medium)
+                    .appShadow(level: .medium)
 
                 Text(badge.emoji)
                     .font(.system(size: 32))

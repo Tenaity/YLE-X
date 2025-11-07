@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
@@ -105,7 +106,7 @@ struct ProfileView: View {
                             )
                         )
                         .frame(width: 110, height: 110)
-                        .appShadow(.heavy)
+                        .appShadow(level: .heavy)
 
                     Text("👧")
                         .font(.system(size: 60))
@@ -125,7 +126,7 @@ struct ProfileView: View {
                 .background(
                     Capsule()
                         .fill(viewModel.currentLevel.primaryColor)
-                        .appShadow(.medium)
+                        .appShadow(level: .medium)
                 )
                 .offset(y: 55)
             }
@@ -159,7 +160,7 @@ struct ProfileView: View {
         .background(
             RoundedRectangle(cornerRadius: AppRadius.xl)
                 .fill(Color(UIColor.secondarySystemBackground))
-                .appShadow(.medium)
+                .appShadow(level: .medium)
         )
     }
 
@@ -320,7 +321,7 @@ struct StatCard: View {
         .background(
             RoundedRectangle(cornerRadius: AppRadius.lg)
                 .fill(Color(UIColor.secondarySystemBackground))
-                .appShadow(.light)
+                .appShadow(level: .light)
         )
     }
 }
@@ -341,7 +342,7 @@ struct BadgeCard: View {
                         )
                     )
                     .frame(width: 80, height: 80)
-                    .appShadow(.medium)
+                    .appShadow(level: .medium)
 
                 Text(badge.emoji)
                     .font(.system(size: 36))
@@ -366,7 +367,7 @@ struct SettingsRow: View {
 
     var body: some View {
         Button(action: {
-            HapticManager.shared.impact(.light)
+            HapticManager.shared.playLight()
             action()
         }) {
             HStack(spacing: AppSpacing.md) {

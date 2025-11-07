@@ -56,7 +56,7 @@ class HomeViewModel: ObservableObject {
     // MARK: - Public Methods
     func selectLevel(_ level: YLELevel) {
         currentLevel = level
-        HapticManager.shared.impact(.medium)
+        HapticManager.shared.playLight()
         // TODO: Save selection and update curriculum
     }
 

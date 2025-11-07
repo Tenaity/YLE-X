@@ -43,7 +43,7 @@ struct TabBarView: View {
                     namespace: animation
                 ) {
                     withAnimation(.appBouncy) {
-                        HapticManager.shared.impact(.light)
+                        HapticManager.shared.playLight()
                         selectedTab = tab
                     }
                 }
@@ -54,7 +54,7 @@ struct TabBarView: View {
         .background(
             RoundedRectangle(cornerRadius: AppRadius.xl)
                 .fill(Material.ultraThinMaterial)
-                .appShadow(.heavy)
+                .appShadow(level: .heavy)
         )
         .padding(.horizontal, AppSpacing.lg)
         .padding(.bottom, AppSpacing.md)
@@ -152,28 +152,10 @@ enum Tab: CaseIterable {
     }
 }
 
-// MARK: - Placeholder Views
+// MARK: - Learn View Wrapper
 struct LearnView: View {
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: AppSpacing.xl) {
-                    Text("📚")
-                        .font(.system(size: 80))
-
-                    Text("Learning Hub")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.appText)
-
-                    Text("Start your English learning journey")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.appTextSecondary)
-                }
-                .padding(AppSpacing.xl)
-            }
-            .background(Color.appBackground.ignoresSafeArea())
-            .navigationTitle("Learn")
-        }
+        LessonListView()
     }
 }
 
