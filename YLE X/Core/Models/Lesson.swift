@@ -8,6 +8,12 @@
 import Foundation
 import FirebaseFirestore
 
+// MARK: - Learning Path Type
+enum LearningPathType: String, Codable {
+    case linear   // Main quest (Starters → Movers → Flyers)
+    case sandbox  // Side quest (Topics, Skills, Games)
+}
+
 // MARK: - Lesson Model
 struct Lesson: Identifiable, Codable {
     @DocumentID var id: String?
@@ -17,10 +23,17 @@ struct Lesson: Identifiable, Codable {
     let skill: String  // "vocabulary", "listening", etc.
     let order: Int
     let xpReward: Int
+    let gemsReward: Int  // NEW: Gems earned from completing lesson
     let isLocked: Bool
     let thumbnailEmoji: String
     let estimatedMinutes: Int
     let totalExercises: Int
+
+    // NEW: Dual-path support
+    let pathType: LearningPathType  // .linear or .sandbox
+    let pathCategory: String?       // "Pronunciation Workshop", "Vocab Island", etc.
+    let isBoss: Bool               // Is this a boss battle (mock test)?
+    let requiredGemsToUnlock: Int  // For sandbox items only (default 0)
 
     var ylelevel: YLELevel? {
         YLELevel(rawValue: level.capitalized)
@@ -28,6 +41,11 @@ struct Lesson: Identifiable, Codable {
 
     var skillType: Skill? {
         Skill(rawValue: skill.capitalized)
+    }
+
+    // NEW: Helper to determine if lesson can be purchased/unlocked
+    var requiresGemsToUnlock: Bool {
+        pathType == .sandbox && requiredGemsToUnlock > 0
     }
 }
 
@@ -98,5 +116,35 @@ struct LessonResult {
         case good = "Good Job! 👍"
         case average = "Keep Trying! 💪"
         case needsImprovement = "Practice More! 📚"
+    }
+}
+
+// MARK: - AI Activity Model (for AI Learning features)
+struct AIActivity: Identifiable, Codable {
+    @DocumentID var id: String?
+    let type: AIActivityType
+    let level: String  // "starters", "movers", "flyers"
+    let pathCategory: String  // "Pronunciation Workshop", "Vocabulary with IPA", etc.
+    let title: String
+    let description: String
+    let targetText: String  // Text to practice
+    let ipaGuide: String?   // IPA pronunciation guide
+    let difficulty: Int     // 1-5
+    let xpReward: Int
+    let gemsReward: Int
+    let estimatedMinutes: Int
+    let order: Int
+    let thumbnailEmoji: String
+
+    enum AIActivityType: String, Codable {
+        case pronunciation     // Practice word pronunciation
+        case vocabularyWithIPA  // Learn vocabulary with IPA
+        case listeningComp     // AI-assisted listening comprehension
+        case conversationPractice  // Future: AI conversation partner
+        case ipaWorkshop       // Learn 44 English phonemes
+    }
+
+    var ylelevel: YLELevel? {
+        YLELevel(rawValue: level.capitalized)
     }
 }

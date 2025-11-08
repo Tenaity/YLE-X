@@ -3,6 +3,7 @@ import FirebaseCore
 
 struct MainAppFlow: View {
     @StateObject private var session = SessionViewModel()
+    @StateObject private var programStore = ProgramSelectionStore()
 
     var body: some View {
         Group {
@@ -13,7 +14,7 @@ struct MainAppFlow: View {
             }
         }
         .environmentObject(session)
+        .environmentObject(programStore)
     }
 }
-
 

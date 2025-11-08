@@ -8,9 +8,8 @@
 import SwiftUI
 
 struct HomeView: View {
+    @EnvironmentObject private var programStore: ProgramSelectionStore
     @StateObject private var viewModel = HomeViewModel()
-    @State private var selectedLevel: YLELevel?
-    @State private var showLevelDetail = false
     @State private var animateCards = false
     @State private var animateHeader = false
     
@@ -237,11 +236,12 @@ struct HomeView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.md) {
                     ForEach(YLELevel.allCases, id: \.self) { level in
-                        LevelCard(level: level, isSelected: viewModel.currentLevel == level)
+                        LevelCard(level: level, isSelected: programStore.selectedLevel == level)
                             .onTapGesture {
+                                guard programStore.selectedLevel != level else { return }
                                 withAnimation(.appBouncy) {
                                     HapticManager.shared.playLight()
-                                    viewModel.selectLevel(level)
+                                    programStore.select(level: level)
                                 }
                             }
                     }
@@ -258,14 +258,28 @@ struct HomeView: View {
                 .foregroundColor(.appText)
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.md) {
-                QuickActionCard(
-                    icon: "play.circle.fill",
-                    title: "Continue Learning",
-                    subtitle: "Pick up where you left",
-                    color: .appPrimary,
-                    action: {}
-                )
-                
+                NavigationLink(destination: LinearJourneyView()) {
+                    QuickActionCard(
+                        icon: "map.fill",
+                        title: "Main Quest",
+                        subtitle: "Hành Trình YLE",
+                        color: .appPrimary,
+                        action: {}
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                NavigationLink(destination: SandboxMapView()) {
+                    QuickActionCard(
+                        icon: "globe.asia.australia.fill",
+                        title: "Side Quest",
+                        subtitle: "Thế Giới Khám Phá",
+                        color: .appSecondary,
+                        action: {}
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+
                 QuickActionCard(
                     icon: "chart.bar.fill",
                     title: "Daily Challenge",
@@ -556,5 +570,5 @@ struct BadgeItem: Identifiable {
 
 #Preview {
     HomeView()
+        .environmentObject(ProgramSelectionStore())
 }
-

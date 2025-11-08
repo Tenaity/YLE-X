@@ -9,11 +9,12 @@ import SwiftUI
 import FirebaseAuth
 
 struct LessonListView: View {
+    @EnvironmentObject private var programStore: ProgramSelectionStore
     @StateObject private var lessonService = LessonService.shared
-    @State private var selectedLevel: YLELevel = .starters
     @State private var animateLessons = false
     @State private var selectedLesson: Lesson?
     @State private var errorMessage: String?
+    @State private var hasStartedProgressListener = false
 
     var body: some View {
         NavigationStack {
@@ -38,8 +39,8 @@ struct LessonListView: View {
                         }
                     }
 
-                    // Level Selector
-                    levelSelector
+                    // Active Program
+                    programOverviewCard
 
                     // Progress Stats
                     progressStatsCard
@@ -89,82 +90,118 @@ struct LessonListView: View {
             .sheet(item: $selectedLesson) { lesson in
                 LessonDetailView(lesson: lesson)
             }
-            .task {
-                do {
-                    print("[LessonListView] Fetching lessons for level: \(selectedLevel.rawValue.lowercased())")
-                    try await lessonService.fetchLessons(for: selectedLevel)
-                    print("[LessonListView] Lessons fetched: \(lessonService.lessons.count)")
-
-                    // Ensure user is authenticated before fetching user progress
-                    if Auth.auth().currentUser == nil {
-                        print("[LessonListView] No user signed in. Signing in anonymously...")
-                        do {
-                            _ = try await Auth.auth().signInAnonymously()
-                            print("[LessonListView] Anonymous sign-in successful")
-                        } catch {
-                            print("[LessonListView] Anonymous sign-in failed: \(error)")
-                        }
-                    }
-
-                    do {
-                        try await lessonService.fetchUserProgress()
-                        print("[LessonListView] User progress fetched: \(lessonService.userProgress.count)")
-                    } catch {
-                        print("[LessonListView] fetchUserProgress error: \(error)")
-                    }
-
-                    lessonService.startListeningToProgress()
-                    print("[LessonListView] Started listening to progress")
-
-                    // Clear error if lessons loaded successfully
-                    if !lessonService.lessons.isEmpty {
-                        errorMessage = nil
-                    }
-
-                    withAnimation(.appBouncy.delay(0.2)) {
-                        animateLessons = true
-                    }
-                } catch {
-                    let errorMsg = "Failed to load lessons: \(error.localizedDescription)"
-                    print("[LessonListView] Error loading lessons: \(errorMsg)")
-                    errorMessage = errorMsg
-                }
+            .task(id: selectedLevel) {
+                await loadLessons(for: selectedLevel)
             }
         }
     }
 
-    // MARK: - Level Selector
-    private var levelSelector: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+    // MARK: - Program Overview
+    private var programOverviewCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.md) {
-                ForEach(YLELevel.allCases, id: \.self) { level in
-                    LevelSelectorButton(
-                        level: level,
-                        isSelected: selectedLevel == level,
-                        action: {
-                            withAnimation(.appBouncy) {
-                                HapticManager.shared.playMedium()
-                                selectedLevel = level
-                                animateLessons = false
-                                errorMessage = nil
-                                Task {
-                                    do {
-                                        try await lessonService.fetchLessons(for: level)
-                                        if !lessonService.lessons.isEmpty {
-                                            errorMessage = nil
-                                        }
-                                    } catch {
-                                        errorMessage = "Failed to load lessons for \(level.title)"
-                                    }
-                                    withAnimation(.appBouncy.delay(0.1)) {
-                                        animateLessons = true
-                                    }
-                                }
-                            }
-                        }
-                    )
+                Text(selectedLevel.emoji)
+                    .font(.system(size: 42))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Current Program")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.appTextSecondary)
+
+                    Text(selectedLevel.title)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(selectedLevel.primaryColor)
+
+                    Text(selectedLevel.description)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.appTextSecondary)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Age")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.appTextSecondary)
+                    Text(selectedLevel.ageRange)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.appText)
+                        .padding(.horizontal, AppSpacing.sm)
+                        .padding(.vertical, AppSpacing.xs)
+                        .background(
+                            Capsule()
+                                .fill(selectedLevel.primaryColor.opacity(0.12))
+                        )
                 }
             }
+
+            Divider()
+                .padding(.vertical, AppSpacing.sm)
+
+            Text("Đổi chương trình tại màn hình Home hoặc Profile để xem đúng lộ trình học.")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.appTextSecondary)
+        }
+        .padding(AppSpacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .fill(Color(UIColor.secondarySystemBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.xl)
+                        .stroke(selectedLevel.primaryColor.opacity(0.15), lineWidth: 1)
+                )
+                .appShadow(level: .light)
+        )
+    }
+
+    private var selectedLevel: YLELevel {
+        programStore.selectedLevel
+    }
+
+    @MainActor
+    private func loadLessons(for level: YLELevel) async {
+        errorMessage = nil
+        animateLessons = false
+
+        do {
+            print("[LessonListView] Fetching lessons for level: \(level.rawValue.lowercased())")
+            try await lessonService.fetchLessons(for: level)
+            print("[LessonListView] Lessons fetched: \(lessonService.lessons.count)")
+
+            if Auth.auth().currentUser == nil {
+                print("[LessonListView] No user signed in. Signing in anonymously...")
+                do {
+                    _ = try await Auth.auth().signInAnonymously()
+                    print("[LessonListView] Anonymous sign-in successful")
+                } catch {
+                    print("[LessonListView] Anonymous sign-in failed: \(error)")
+                }
+            }
+
+            do {
+                try await lessonService.fetchUserProgress()
+                print("[LessonListView] User progress fetched: \(lessonService.userProgress.count)")
+            } catch {
+                print("[LessonListView] fetchUserProgress error: \(error)")
+            }
+
+            if !hasStartedProgressListener {
+                lessonService.startListeningToProgress()
+                hasStartedProgressListener = true
+                print("[LessonListView] Started listening to progress")
+            }
+
+            if !lessonService.lessons.isEmpty {
+                errorMessage = nil
+            }
+
+            withAnimation(.appBouncy.delay(0.2)) {
+                animateLessons = true
+            }
+        } catch {
+            let errorMsg = "Failed to load lessons: \(error.localizedDescription)"
+            print("[LessonListView] Error loading lessons: \(errorMsg)")
+            errorMessage = errorMsg
         }
     }
 
@@ -263,40 +300,6 @@ struct LessonListView: View {
         guard let prevId = previousLesson?.id else { return lesson.isLocked }
 
         return !lessonService.isLessonCompleted(prevId) || lesson.isLocked
-    }
-}
-
-// MARK: - Level Selector Button
-struct LevelSelectorButton: View {
-    let level: YLELevel
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: AppSpacing.sm) {
-                Text(level.emoji)
-                    .font(.system(size: 24))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(level.title)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(isSelected ? .white : .appText)
-
-                    Text(level.ageRange)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(isSelected ? .white.opacity(0.8) : .appTextSecondary)
-                }
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.full)
-                    .fill(isSelected ? level.primaryColor : Color(UIColor.secondarySystemBackground))
-                    .appShadow(level: isSelected ? .medium : .light)
-            )
-            .scaleEffect(isSelected ? 1.05 : 1.0)
-        }
     }
 }
 
@@ -452,4 +455,5 @@ struct ConnectingPath: View {
 
 #Preview {
     LessonListView()
+        .environmentObject(ProgramSelectionStore())
 }

@@ -20,7 +20,9 @@
       "Bash(for:*)",
       "Bash(do echo \"=== Testing $f ===\")",
       "Bash(done)",
-      "Bash(do echo \"✓ $f\")"
+      "Bash(do echo \"✓ $f\")",
+      "Bash(do echo \"=== Checking $f ===\")",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

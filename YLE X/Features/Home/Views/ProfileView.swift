@@ -9,6 +9,7 @@ import SwiftUI
 import Combine
 
 struct ProfileView: View {
+    @EnvironmentObject private var programStore: ProgramSelectionStore
     @StateObject private var viewModel = ProfileViewModel()
     @State private var animateContent = false
 
@@ -20,6 +21,11 @@ struct ProfileView: View {
                     profileHeader
                         .opacity(animateContent ? 1 : 0)
                         .offset(y: animateContent ? 0 : -20)
+
+                    // Program Selection
+                    programSelectionSection
+                        .opacity(animateContent ? 1 : 0)
+                        .offset(y: animateContent ? 0 : 10)
 
                     // Stats Cards
                     statsSection
@@ -70,6 +76,10 @@ struct ProfileView: View {
         }
     }
 
+    private var currentProgram: YLELevel {
+        programStore.selectedLevel
+    }
+
     // MARK: - Profile Header
     private var profileHeader: some View {
         VStack(spacing: AppSpacing.lg) {
@@ -85,8 +95,8 @@ struct ProfileView: View {
                     .stroke(
                         LinearGradient(
                             colors: [
-                                viewModel.currentLevel.primaryColor,
-                                viewModel.currentLevel.primaryColor.opacity(0.7)
+                                currentProgram.primaryColor,
+                                currentProgram.primaryColor.opacity(0.7)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -103,8 +113,8 @@ struct ProfileView: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    viewModel.currentLevel.primaryColor,
-                                    viewModel.currentLevel.primaryColor.opacity(0.8)
+                                    currentProgram.primaryColor,
+                                    currentProgram.primaryColor.opacity(0.8)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -119,7 +129,7 @@ struct ProfileView: View {
 
                 // Level Badge
                 VStack(spacing: 2) {
-                    Text(viewModel.currentLevel.emoji)
+                    Text(currentProgram.emoji)
                         .font(.system(size: 16))
 
                     Text("Lv.\(viewModel.userLevel)")
@@ -130,7 +140,7 @@ struct ProfileView: View {
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .fill(viewModel.currentLevel.primaryColor)
+                        .fill(currentProgram.primaryColor)
                         .appShadow(level: .medium)
                 )
                 .offset(y: 55)
@@ -142,9 +152,9 @@ struct ProfileView: View {
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.appText)
 
-                Text(viewModel.currentLevel.title)
+                Text(currentProgram.title)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(viewModel.currentLevel.primaryColor)
+                    .foregroundColor(currentProgram.primaryColor)
 
                 // XP Progress
                 HStack(spacing: AppSpacing.xs) {
@@ -166,6 +176,60 @@ struct ProfileView: View {
             RoundedRectangle(cornerRadius: AppRadius.xl)
                 .fill(Color(UIColor.secondarySystemBackground))
                 .appShadow(level: .medium)
+        )
+    }
+
+    // MARK: - Program Selection
+    private var programSelectionSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Learning Program")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.appText)
+
+                    Text("Currently: \(currentProgram.title)")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(currentProgram.primaryColor)
+                }
+
+                Spacer()
+
+                Text(currentProgram.ageRange)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.appTextSecondary)
+                    .padding(.horizontal, AppSpacing.sm)
+                    .padding(.vertical, AppSpacing.xs)
+                    .background(
+                        Capsule()
+                            .fill(currentProgram.primaryColor.opacity(0.1))
+                    )
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: AppSpacing.sm) {
+                    ForEach(YLELevel.allCases, id: \.self) { level in
+                        ProgramOptionChip(level: level, isSelected: currentProgram == level)
+                            .onTapGesture {
+                                guard currentProgram != level else { return }
+                                withAnimation(.appBouncy) {
+                                    HapticManager.shared.playLight()
+                                    programStore.select(level: level)
+                                }
+                            }
+                    }
+                }
+            }
+
+            Text("Chọn chương trình phù hợp cho bé. Bạn có thể thay đổi bất kỳ lúc nào từ đây hoặc màn hình Home.")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.appTextSecondary)
+        }
+        .padding(AppSpacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .fill(Color(UIColor.secondarySystemBackground))
+                .appShadow(level: .light)
         )
     }
 
@@ -324,6 +388,27 @@ struct ProfileView: View {
                     )
                 }
             }
+
+            // Phase 3: Leaderboard
+            HStack(spacing: AppSpacing.md) {
+                NavigationLink(destination: LeaderboardView()) {
+                    gamificationCard(
+                        icon: "trophy.fill",
+                        title: "Leaderboard",
+                        subtitle: "Weekly rankings",
+                        color: .appBadgeGold
+                    )
+                }
+
+                // Placeholder for future social feature
+                gamificationCard(
+                    icon: "person.2.fill",
+                    title: "Friends",
+                    subtitle: "Coming soon",
+                    color: .appInfo
+                )
+                .opacity(0.5)
+            }
         }
     }
 
@@ -433,6 +518,41 @@ struct SettingsRow: View {
     }
 }
 
+// MARK: - Program Option Chip
+struct ProgramOptionChip: View {
+    let level: YLELevel
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Text(level.emoji)
+                .font(.system(size: 28))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(level.title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.appText)
+                Text(level.ageRange)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.appTextSecondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, AppSpacing.sm)
+        .padding(.horizontal, AppSpacing.md)
+        .frame(width: 170, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .fill(isSelected ? level.primaryColor.opacity(0.12) : Color(UIColor.secondarySystemBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.lg)
+                        .stroke(isSelected ? level.primaryColor : Color.clear, lineWidth: 2)
+                )
+        )
+    }
+}
+
 // MARK: - Weekly Activity Model
 struct WeeklyActivity: Identifiable {
     let id = UUID()
@@ -444,7 +564,6 @@ struct WeeklyActivity: Identifiable {
 @MainActor
 class ProfileViewModel: ObservableObject {
     @Published var userName: String = "Emily"
-    @Published var currentLevel: YLELevel = .starters
     @Published var userLevel: Int = 12
     @Published var totalXP: Int = 1250
     @Published var currentStreak: Int = 7
@@ -495,4 +614,5 @@ class ProfileViewModel: ObservableObject {
 
 #Preview {
     ProfileView()
+        .environmentObject(ProgramSelectionStore())
 }

@@ -17,7 +17,6 @@ class HomeViewModel: ObservableObject {
     @Published var todayMinutes: Int = 15
     @Published var dailyGoal: Int = 30
     @Published var totalXP: Int = 1250
-    @Published var currentLevel: YLELevel = .starters
     @Published var recentBadges: [BadgeItem] = []
 
     // MARK: - Computed Properties
@@ -54,12 +53,6 @@ class HomeViewModel: ObservableObject {
     }
 
     // MARK: - Public Methods
-    func selectLevel(_ level: YLELevel) {
-        currentLevel = level
-        HapticManager.shared.playLight()
-        // TODO: Save selection and update curriculum
-    }
-
     func getSkillProgress(_ skill: Skill) -> Double {
         skillProgressData[skill] ?? 0.0
     }

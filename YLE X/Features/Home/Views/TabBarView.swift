@@ -161,4 +161,5 @@ struct LearnView: View {
 
 #Preview {
     TabBarView()
+        .environmentObject(ProgramSelectionStore())
 }

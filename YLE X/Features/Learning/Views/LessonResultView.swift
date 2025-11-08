@@ -419,10 +419,15 @@ struct ConfettiShape: Shape {
             skill: "vocabulary",
             order: 1,
             xpReward: 50,
+            gemsReward: 10,
             isLocked: false,
             thumbnailEmoji: "🎨",
             estimatedMinutes: 10,
-            totalExercises: 5
+            totalExercises: 5,
+            pathType: .linear,
+            pathCategory: nil,
+            isBoss: false,
+            requiredGemsToUnlock: 0
         ),
         score: 85,
         totalPoints: 100,

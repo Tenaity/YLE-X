@@ -15,12 +15,16 @@ class LessonService: ObservableObject {
     static let shared = LessonService()
 
     @Published var lessons: [Lesson] = []
+    @Published var linearLessons: [Lesson] = []  // NEW: Linear path lessons
+    @Published var sandboxLessons: [Lesson] = [] // NEW: Sandbox lessons
+    @Published var aiActivities: [AIActivity] = []  // NEW: AI learning activities
     @Published var userProgress: [String: UserLessonProgress] = [:]
     @Published var isLoading = false
     @Published var error: Error?
 
     private let db = Firestore.firestore()
     private var lessonsCache: [String: Lesson] = [:]
+    private var aiActivitiesCache: [String: AIActivity] = [:]
     private var listeners: [ListenerRegistration] = []
 
     private init() {}
@@ -202,5 +206,174 @@ class LessonService: ObservableObject {
         case 0.5..<0.7: return 1
         default: return 0
         }
+    }
+
+    // MARK: - NEW: Linear Path Methods
+    func fetchLinearLessons(for level: YLELevel) async throws -> [Lesson] {
+        isLoading = true
+        defer { isLoading = false }
+
+        let levelQuery = level.rawValue.lowercased()
+        print("[LessonService] Fetching linear lessons for: \(levelQuery)")
+
+        let snapshot = try await db.collection("lessons")
+            .whereField("level", isEqualTo: levelQuery)
+            .whereField("pathType", isEqualTo: "linear")
+            .order(by: "order")
+            .getDocuments()
+
+        let lessons = try snapshot.documents.compactMap { doc -> Lesson? in
+            try doc.data(as: Lesson.self)
+        }
+
+        // Cache and store
+        lessons.forEach { lesson in
+            if let id = lesson.id {
+                lessonsCache[id] = lesson
+            }
+        }
+
+        self.linearLessons = lessons
+        return lessons
+    }
+
+    // MARK: - NEW: Sandbox Methods
+    func fetchSandboxLessons(pathCategory: String) async throws -> [Lesson] {
+        isLoading = true
+        defer { isLoading = false }
+
+        print("[LessonService] Fetching sandbox lessons for category: \(pathCategory)")
+
+        let snapshot = try await db.collection("lessons")
+            .whereField("pathType", isEqualTo: "sandbox")
+            .whereField("pathCategory", isEqualTo: pathCategory)
+            .order(by: "order")
+            .getDocuments()
+
+        let lessons = try snapshot.documents.compactMap { doc -> Lesson? in
+            try doc.data(as: Lesson.self)
+        }
+
+        // Cache lessons
+        lessons.forEach { lesson in
+            if let id = lesson.id {
+                lessonsCache[id] = lesson
+            }
+        }
+
+        self.sandboxLessons = lessons
+        return lessons
+    }
+
+    func fetchAllSandboxLessons() async throws -> [Lesson] {
+        isLoading = true
+        defer { isLoading = false }
+
+        let snapshot = try await db.collection("lessons")
+            .whereField("pathType", isEqualTo: "sandbox")
+            .order(by: "pathCategory")
+            .order(by: "order")
+            .getDocuments()
+
+        let lessons = try snapshot.documents.compactMap { doc -> Lesson? in
+            try doc.data(as: Lesson.self)
+        }
+
+        // Cache lessons
+        lessons.forEach { lesson in
+            if let id = lesson.id {
+                lessonsCache[id] = lesson
+            }
+        }
+
+        self.sandboxLessons = lessons
+        return lessons
+    }
+
+    // MARK: - NEW: AI Activities Methods
+    func fetchAIActivities(for level: YLELevel) async throws -> [AIActivity] {
+        isLoading = true
+        defer { isLoading = false }
+
+        let levelQuery = level.rawValue.lowercased()
+        print("[LessonService] Fetching AI activities for: \(levelQuery)")
+
+        let snapshot = try await db.collection("aiActivities")
+            .whereField("level", isEqualTo: levelQuery)
+            .order(by: "pathCategory")
+            .order(by: "order")
+            .getDocuments()
+
+        let activities = try snapshot.documents.compactMap { doc -> AIActivity? in
+            try doc.data(as: AIActivity.self)
+        }
+
+        // Cache activities
+        activities.forEach { activity in
+            if let id = activity.id {
+                aiActivitiesCache[id] = activity
+            }
+        }
+
+        self.aiActivities = activities
+        return activities
+    }
+
+    func fetchAIActivities(for level: YLELevel, pathCategory: String) async throws -> [AIActivity] {
+        isLoading = true
+        defer { isLoading = false }
+
+        let levelQuery = level.rawValue.lowercased()
+        print("[LessonService] Fetching AI activities for: \(levelQuery), category: \(pathCategory)")
+
+        let snapshot = try await db.collection("aiActivities")
+            .whereField("level", isEqualTo: levelQuery)
+            .whereField("pathCategory", isEqualTo: pathCategory)
+            .order(by: "order")
+            .getDocuments()
+
+        let activities = try snapshot.documents.compactMap { doc -> AIActivity? in
+            try doc.data(as: AIActivity.self)
+        }
+
+        // Cache activities
+        activities.forEach { activity in
+            if let id = activity.id {
+                aiActivitiesCache[id] = activity
+            }
+        }
+
+        return activities
+    }
+
+    // MARK: - NEW: Helper Methods for Dual Path
+    func getCachedAIActivity(_ activityId: String) -> AIActivity? {
+        aiActivitiesCache[activityId]
+    }
+
+    func getLinearLessonsByRound(phase: YLELevel, roundNumber: Int) -> [Lesson] {
+        linearLessons.filter { lesson in
+            lesson.order == roundNumber && lesson.ylelevel == phase
+        }
+    }
+
+    func getBossLesson(for level: YLELevel) -> Lesson? {
+        linearLessons.first { lesson in
+            lesson.ylelevel == level && lesson.isBoss
+        }
+    }
+
+    func getSandboxLessonsByCategory(_ category: String) -> [Lesson] {
+        sandboxLessons.filter { $0.pathCategory == category }
+    }
+
+    /// Get lessons grouped by category for sidebar/island navigation
+    func groupedSandboxLessons() -> [String: [Lesson]] {
+        Dictionary(grouping: sandboxLessons, by: { $0.pathCategory ?? "Other" })
+    }
+
+    /// Get AI activities grouped by category
+    func groupedAIActivities() -> [String: [AIActivity]] {
+        Dictionary(grouping: aiActivities, by: { $0.pathCategory })
     }
 }

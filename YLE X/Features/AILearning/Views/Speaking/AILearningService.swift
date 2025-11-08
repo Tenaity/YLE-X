@@ -5,113 +5,130 @@ final class AILearningService: @unchecked Sendable {
     static let shared = AILearningService()
     private init() {}
 
+    // Main API: produce a PronunciationScore using simple heuristics
     func analyzePronunciation(expected: String, actual: String) -> PronunciationScore {
         let expectedTokens = tokenizeAndNormalize(expected)
         let actualTokens = tokenizeAndNormalize(actual)
 
-        enum WordStatus {
-            case correct
-            case mispronounced
-            case omitted
-            case inserted
-        }
-
-        struct WordScore {
-            let word: String
-            let expected: String
-            let status: WordStatus
-            let accuracy: Double
-        }
-
+        // Alignment and per-word scoring
         var wordScores: [WordScore] = []
-
-        var insertedIndices = Set<Int>()
-        var omittedCount = 0
         var correctCount = 0
         var presentCount = 0
         var insertedCount = 0
 
-        // Map to track which actual tokens are matched
+        // Track matched actual indices to later detect extra insertions
         var matchedActualIndices = Set<Int>()
 
-        // Align expected and actual by index position
         let maxCount = max(expectedTokens.count, actualTokens.count)
         for index in 0..<maxCount {
             if index < expectedTokens.count && index < actualTokens.count {
                 let expectedWord = expectedTokens[index]
                 let actualWord = actualTokens[index]
+
                 if expectedWord == actualWord {
-                    wordScores.append(WordScore(word: actualWord, expected: expectedWord, status: .correct, accuracy: 1))
+                    wordScores.append(
+                        WordScore(
+                            word: actualWord,
+                            expected: expectedWord,
+                            accuracy: 100,
+                            status: .correct,
+                            suggestion: nil
+                        )
+                    )
                     correctCount += 1
                     presentCount += 1
                     matchedActualIndices.insert(index)
                 } else {
-                    let levRatio = levenshteinDistanceRatio(s1: expectedWord, s2: actualWord)
-                    if levRatio < 1 {
-                        wordScores.append(WordScore(word: actualWord, expected: expectedWord, status: .mispronounced, accuracy: levRatio))
-                        presentCount += 1
-                        matchedActualIndices.insert(index)
-                    } else {
-                        wordScores.append(WordScore(word: "", expected: expectedWord, status: .omitted, accuracy: 0))
-                        omittedCount += 1
-                    }
+                    let ratio = levenshteinDistanceRatio(s1: expectedWord, s2: actualWord) // 0...1
+                    let percent = max(0, min(100, Int((ratio * 100).rounded())))
+                    let status: WordStatus = ratio >= 0.6 ? .mispronounced : .mispronounced // keep mispronounced for any non-exact
+
+                    wordScores.append(
+                        WordScore(
+                            word: actualWord,
+                            expected: expectedWord,
+                            accuracy: Double(percent),
+                            status: status,
+                            suggestion: ratio >= 0.6 ? nil : "Try: \(expectedWord)"
+                        )
+                    )
+                    presentCount += 1
+                    matchedActualIndices.insert(index)
                 }
             } else if index < expectedTokens.count {
+                // Omitted expected word
                 let expectedWord = expectedTokens[index]
-                wordScores.append(WordScore(word: "", expected: expectedWord, status: .omitted, accuracy: 0))
-                omittedCount += 1
+                wordScores.append(
+                    WordScore(
+                        word: "",
+                        expected: expectedWord,
+                        accuracy: 0,
+                        status: .omitted,
+                        suggestion: "Remember to say: \(expectedWord)"
+                    )
+                )
             } else if index < actualTokens.count {
+                // Inserted extra word
                 let actualWord = actualTokens[index]
-                wordScores.append(WordScore(word: actualWord, expected: actualWord, status: .inserted, accuracy: 0))
+                wordScores.append(
+                    WordScore(
+                        word: actualWord,
+                        expected: actualWord,
+                        accuracy: 0,
+                        status: .inserted,
+                        suggestion: "Extra word"
+                    )
+                )
                 insertedCount += 1
                 matchedActualIndices.insert(index)
             }
         }
 
-        // Check for inserted words not aligned by index (e.g. extra words in actual)
-        for (index, actualWord) in actualTokens.enumerated() {
-            if !matchedActualIndices.contains(index) {
-                wordScores.append(WordScore(word: actualWord, expected: actualWord, status: .inserted, accuracy: 0))
-                insertedCount += 1
-            }
+        // Capture any additional inserted words that weren't aligned
+        for (idx, actualWord) in actualTokens.enumerated() where !matchedActualIndices.contains(idx) {
+            wordScores.append(
+                WordScore(
+                    word: actualWord,
+                    expected: actualWord,
+                    accuracy: 0,
+                    status: .inserted,
+                    suggestion: "Extra word"
+                )
+            )
+            insertedCount += 1
         }
 
-        // Accuracy: percentage of expected tokens marked correct
-        let accuracy: Double = expectedTokens.isEmpty ? 1.0 : Double(correctCount) / Double(expectedTokens.count)
+        // Aggregate metrics (all on 0...100 scale)
+        let accuracy: Double = expectedTokens.isEmpty ? 100 : (Double(correctCount) / Double(expectedTokens.count)) * 100
+        let completeness: Double = expectedTokens.isEmpty ? 100 : (Double(presentCount) / Double(expectedTokens.count)) * 100
 
-        // Completeness: percentage of expected tokens present in any status except omitted
-        let completeness: Double = expectedTokens.isEmpty ? 1.0 : Double(presentCount) / Double(expectedTokens.count)
-
-        // Fluency: continuity of correct/near-correct runs
-        // Calculate breaks = number of transitions between correct/mispronounced and omitted/inserted
+        // Fluency heuristic: penalize insertions and breaks between fluent/non-fluent
         var breaks = 0
-        var lastWasFluent = false
-        for wordScore in wordScores {
-            let fluent = (wordScore.status == .correct || wordScore.status == .mispronounced)
-            if lastWasFluent != fluent && wordScore.status != .inserted {
+        var lastWasFluent: Bool? = nil
+        for ws in wordScores {
+            let fluent = (ws.status == .correct || ws.status == .mispronounced)
+            if let last = lastWasFluent, last != fluent, ws.status != .inserted {
                 breaks += 1
             }
             lastWasFluent = fluent
         }
-        var fluencyRaw = 100 - (insertedCount * 10) - (breaks * 5)
-        if fluencyRaw < 0 { fluencyRaw = 0 }
-        if fluencyRaw > 100 { fluencyRaw = 100 }
+        let fluencyRaw = max(0, 100 - (insertedCount * 10) - (breaks * 5))
         let fluency = Double(fluencyRaw)
 
-        // OverallScore: weighted average
-        let overallScore = 0.5 * accuracy + 0.3 * (fluency / 100) + 0.2 * completeness
+        // Overall weighted score
+        let overallScore = (0.5 * accuracy) + (0.3 * fluency) + (0.2 * completeness)
 
-        // Feedback generation
+        // Feedback
         var feedback: [String] = []
-        if accuracy < 0.6 {
+        if accuracy < 60 {
             feedback.append("Pronunciation accuracy is low, please practice the correct sounds.")
-        } else if accuracy < 0.85 {
+        } else if accuracy < 85 {
             feedback.append("Good pronunciation, but there is room for improvement.")
         } else {
             feedback.append("Excellent pronunciation!")
         }
 
-        if completeness < 0.8 {
+        if completeness < 80 {
             feedback.append("Some words were omitted, be sure to pronounce all words.")
         }
 
@@ -123,36 +140,13 @@ final class AILearningService: @unchecked Sendable {
             feedback.append("Try to improve your fluency and smoothness of speech.")
         }
 
-        // Convert WordScore array to [PronunciationWordScore]
-        let resultWordScores: [PronunciationWordScore] = wordScores.map { ws in
-            let wordString: String
-            let expectedString: String
-            switch ws.status {
-            case .inserted:
-                wordString = ws.word
-                expectedString = ws.expected
-            case .omitted:
-                wordString = ""
-                expectedString = ws.expected
-            default:
-                wordString = ws.word
-                expectedString = ws.expected
-            }
-            return PronunciationWordScore(
-                word: wordString,
-                expected: expectedString,
-                status: ws.statusToPronunciationWordScoreStatus(),
-                accuracy: ws.accuracy
-            )
-        }
-
         return PronunciationScore(
-            accuracy: accuracy,
-            completeness: completeness,
-            fluency: fluency / 100,
             overallScore: overallScore,
-            feedback: feedback,
-            wordScores: resultWordScores
+            accuracy: accuracy,
+            fluency: fluency,
+            completeness: completeness,
+            wordScores: wordScores,
+            feedback: feedback
         )
     }
 
@@ -177,7 +171,7 @@ final class AILearningService: @unchecked Sendable {
         let a = Array(s1)
         let b = Array(s2)
 
-        var dist = [[Int]](repeating: [Int](repeating: 0, count: b.count + 1), count: a.count + 1)
+        var dist = Array(repeating: Array(repeating: 0, count: b.count + 1), count: a.count + 1)
 
         for i in 0...a.count { dist[i][0] = i }
         for j in 0...b.count { dist[0][j] = j }
@@ -197,27 +191,5 @@ final class AILearningService: @unchecked Sendable {
         }
 
         return dist[a.count][b.count]
-    }
-}
-
-private extension AILearningService.WordStatus {
-    func toPronunciationWordScoreStatus() -> PronunciationWordScore.Status {
-        switch self {
-        case .correct: return .correct
-        case .mispronounced: return .mispronounced
-        case .omitted: return .omitted
-        case .inserted: return .inserted
-        }
-    }
-}
-
-private extension AILearningService.WordScore {
-    func statusToPronunciationWordScoreStatus() -> PronunciationWordScore.Status {
-        switch status {
-        case .correct: return .correct
-        case .mispronounced: return .mispronounced
-        case .omitted: return .omitted
-        case .inserted: return .inserted
-        }
     }
 }
