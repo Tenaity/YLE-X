@@ -22,7 +22,7 @@ from firebase_admin import credentials, firestore
 from datetime import datetime
 
 # Configuration
-CSV_FILE = 'Cambridge_Vocabulary_2018_PERFECT.csv'
+CSV_FILE = 'Cam_Voca_2018.csv'  # Updated to use your completed file
 SERVICE_ACCOUNT_KEY = 'serviceAccountKey.json'
 DRY_RUN = True  # Set to False to upload
 
