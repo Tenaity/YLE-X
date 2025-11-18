@@ -23,17 +23,97 @@ struct Lesson: Identifiable, Codable {
     let skill: String  // "vocabulary", "listening", etc.
     let order: Int
     let xpReward: Int
-    let gemsReward: Int  // NEW: Gems earned from completing lesson
+    let gemsReward: Int  // Gems earned from completing lesson
     let isLocked: Bool
     let thumbnailEmoji: String
     let estimatedMinutes: Int
     let totalExercises: Int
 
-    // NEW: Dual-path support
-    let pathType: LearningPathType  // .linear or .sandbox
-    let pathCategory: String?       // "Pronunciation Workshop", "Vocab Island", etc.
-    let isBoss: Bool               // Is this a boss battle (mock test)?
-    let requiredGemsToUnlock: Int  // For sandbox items only (default 0)
+    // Dual-path support (with default values for backward compatibility)
+    var pathType: LearningPathType  // .linear or .sandbox
+    var pathCategory: String?       // "Pronunciation Workshop", "Vocab Island", etc.
+    var isBoss: Bool               // Is this a boss battle (mock test)?
+    var requiredGemsToUnlock: Int  // For sandbox items only (default 0)
+
+    // Custom decoding to handle missing fields
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case description
+        case level
+        case skill
+        case order
+        case xpReward
+        case gemsReward
+        case isLocked
+        case thumbnailEmoji
+        case estimatedMinutes
+        case totalExercises
+        case pathType
+        case pathCategory
+        case isBoss
+        case requiredGemsToUnlock
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Required fields
+        title = try container.decode(String.self, forKey: .title)
+        description = try container.decode(String.self, forKey: .description)
+        level = try container.decode(String.self, forKey: .level)
+        skill = try container.decode(String.self, forKey: .skill)
+        order = try container.decode(Int.self, forKey: .order)
+        xpReward = try container.decode(Int.self, forKey: .xpReward)
+        thumbnailEmoji = try container.decode(String.self, forKey: .thumbnailEmoji)
+        estimatedMinutes = try container.decode(Int.self, forKey: .estimatedMinutes)
+        totalExercises = try container.decode(Int.self, forKey: .totalExercises)
+
+        // Optional fields with defaults
+        gemsReward = try container.decodeIfPresent(Int.self, forKey: .gemsReward) ?? 0
+        isLocked = try container.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
+        pathType = try container.decodeIfPresent(LearningPathType.self, forKey: .pathType) ?? .linear
+        pathCategory = try container.decodeIfPresent(String.self, forKey: .pathCategory)
+        isBoss = try container.decodeIfPresent(Bool.self, forKey: .isBoss) ?? false
+        requiredGemsToUnlock = try container.decodeIfPresent(Int.self, forKey: .requiredGemsToUnlock) ?? 0
+    }
+
+    // Normal init for creating lessons in code
+    init(
+        id: String? = nil,
+        title: String,
+        description: String,
+        level: String,
+        skill: String,
+        order: Int,
+        xpReward: Int,
+        gemsReward: Int = 0,
+        isLocked: Bool = false,
+        thumbnailEmoji: String,
+        estimatedMinutes: Int,
+        totalExercises: Int,
+        pathType: LearningPathType = .linear,
+        pathCategory: String? = nil,
+        isBoss: Bool = false,
+        requiredGemsToUnlock: Int = 0
+    ) {
+        self.id = id
+        self.title = title
+        self.description = description
+        self.level = level
+        self.skill = skill
+        self.order = order
+        self.xpReward = xpReward
+        self.gemsReward = gemsReward
+        self.isLocked = isLocked
+        self.thumbnailEmoji = thumbnailEmoji
+        self.estimatedMinutes = estimatedMinutes
+        self.totalExercises = totalExercises
+        self.pathType = pathType
+        self.pathCategory = pathCategory
+        self.isBoss = isBoss
+        self.requiredGemsToUnlock = requiredGemsToUnlock
+    }
 
     var ylelevel: YLELevel? {
         YLELevel(rawValue: level.capitalized)

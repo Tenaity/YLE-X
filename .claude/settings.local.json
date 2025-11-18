@@ -22,7 +22,10 @@
       "Bash(done)",
       "Bash(do echo \"✓ $f\")",
       "Bash(do echo \"=== Checking $f ===\")",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(/usr/libexec/PlistBuddy:*)",
+      "Bash(xcrun simctl:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

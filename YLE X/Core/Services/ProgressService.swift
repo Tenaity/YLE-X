@@ -253,6 +253,12 @@ class ProgressService: ObservableObject {
         score: Int,
         xpEarned: Int
     ) async throws {
+        // Validate activityId is not empty (Firebase doesn't allow empty keys)
+        guard !activityId.isEmpty else {
+            print("⚠️ Warning: Cannot save activity with empty ID")
+            return
+        }
+
         guard let userId = Auth.auth().currentUser?.uid,
               var state = learningPathState else {
             throw NSError(domain: "ProgressService", code: 401, userInfo: [NSLocalizedDescriptionKey: "Invalid state"])
@@ -266,7 +272,7 @@ class ProgressService: ObservableObject {
             sandbox.totalActivitiesCompleted += 1
         }
 
-        // Record score
+        // Record score (activityId is guaranteed to be non-empty)
         sandbox.activityScores[activityId] = score
 
         sandbox.lastUpdatedAt = Date()

@@ -614,7 +614,7 @@ struct TopicRowView: View {
         // Create a sample activity based on topic
         let difficulty = topic.difficulty.lowercased() == "easy" ? 1 : topic.difficulty.lowercased() == "medium" ? 2 : 3
 
-        return AIActivity(
+        var activity = AIActivity(
             type: .pronunciation,
             level: "starters",
             pathCategory: "Sandbox Topic",
@@ -629,6 +629,11 @@ struct TopicRowView: View {
             order: 1,
             thumbnailEmoji: "🎤"
         )
+
+        // Generate a unique ID for sample activity
+        activity.id = "sample_\(topic.id)_\(UUID().uuidString.prefix(8))"
+
+        return activity
     }
 }
 

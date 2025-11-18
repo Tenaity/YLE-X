@@ -22,6 +22,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 struct YLEXApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    init() {
+        // Configure Firebase as early as possible
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             MainAppFlow()

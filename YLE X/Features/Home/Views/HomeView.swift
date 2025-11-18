@@ -250,58 +250,56 @@ struct HomeView: View {
         }
     }
     
-    // MARK: - Quick Actions
+    // MARK: - Quick Actions (Discord Style)
     private var quickActionsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("Quick Actions")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundColor(.appText)
-            
+
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.md) {
+                // Main Quest - Navigation
                 NavigationLink(destination: LinearJourneyView()) {
-                    QuickActionCard(
+                    QuickActionCardView(
                         icon: "map.fill",
                         title: "Main Quest",
                         subtitle: "Hành Trình YLE",
-                        color: .appPrimary,
-                        action: {}
+                        color: .appPrimary
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
 
+                // Side Quest - Navigation
                 NavigationLink(destination: SandboxMapView()) {
-                    QuickActionCard(
+                    QuickActionCardView(
                         icon: "globe.asia.australia.fill",
                         title: "Side Quest",
                         subtitle: "Thế Giới Khám Phá",
-                        color: .appSecondary,
-                        action: {}
+                        color: .appSecondary
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
 
+                // Dictionary - Navigation (NEW!)
+                NavigationLink(destination: DictionaryView()) {
+                    QuickActionCardView(
+                        icon: "book.closed.fill",
+                        title: "Dictionary",
+                        subtitle: "Từ Điển Anh-Việt",
+                        color: .appInfo
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                // Daily Challenge
                 QuickActionCard(
                     icon: "chart.bar.fill",
                     title: "Daily Challenge",
                     subtitle: "Earn bonus XP",
                     color: .appAccent,
-                    action: {}
-                )
-                
-                QuickActionCard(
-                    icon: "book.fill",
-                    title: "Vocabulary",
-                    subtitle: "Review new words",
-                    color: .appSkillVocabulary,
-                    action: {}
-                )
-                
-                QuickActionCard(
-                    icon: "mic.fill",
-                    title: "Speaking",
-                    subtitle: "Practice pronunciation",
-                    color: .appSkillSpeaking,
-                    action: {}
+                    action: {
+                        // TODO: Show daily challenge
+                    }
                 )
             }
         }
@@ -468,6 +466,42 @@ struct QuickActionCard: View {
                 isPressed = false
             }
         }
+    }
+}
+
+// MARK: - Quick Action Card View (Discord Style - for NavigationLink)
+struct QuickActionCardView: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundColor(color)
+                .frame(width: 50, height: 50)
+                .background(color.opacity(0.15))
+                .cornerRadius(AppRadius.md)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.appText)
+
+                Text(subtitle)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.appTextSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .fill(Color(UIColor.secondarySystemBackground))
+                .appShadow(level: .light)
+        )
     }
 }
 

@@ -13,7 +13,7 @@ struct TabBarView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Tab Content
+            // Tab Content with subtle gradient background
             Group {
                 switch selectedTab {
                 case .home:
@@ -27,6 +27,19 @@ struct TabBarView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                // Subtle gradient background based on selected tab
+                LinearGradient(
+                    colors: [
+                        Color.appBackground,
+                        selectedTab.color.opacity(0.03)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                .animation(.easeInOut(duration: 0.3), value: selectedTab)
+            )
 
             // Custom Tab Bar
             customTabBar
