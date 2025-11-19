@@ -58,7 +58,29 @@ struct WordListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                showAllLevelsToggle
+                Menu {
+                    Section {
+                        NavigationLink {
+                            FlashcardDeckView(category: category, level: selectedLevel)
+                        } label: {
+                            Label("Flashcards", systemImage: "rectangle.portrait.on.rectangle.portrait")
+                        }
+
+                        NavigationLink {
+                            QuizView(category: category, level: selectedLevel)
+                        } label: {
+                            Label("Quiz", systemImage: "questionmark.circle")
+                        }
+                    }
+
+                    Section {
+                        showAllLevelsToggle
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3)
+                        .foregroundColor(.appPrimary)
+                }
             }
         }
         .task {

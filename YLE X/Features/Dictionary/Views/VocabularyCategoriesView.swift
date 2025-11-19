@@ -68,15 +68,10 @@ struct VocabularyCategoriesView: View {
                 // Category Grid
                 LazyVGrid(columns: columns, spacing: AppSpacing.md) {
                     ForEach(viewModel.categories) { category in
-                        NavigationLink {
-                            WordListView(
-                                category: category,
-                                selectedLevel: selectedLevel
-                            )
-                        } label: {
-                            CategoryCard(category: category)
-                        }
-                        .buttonStyle(.plain)
+                        CategoryCardWithActions(
+                            category: category,
+                            selectedLevel: selectedLevel
+                        )
                     }
                 }
                 .padding(.horizontal, AppSpacing.lg)
@@ -384,6 +379,80 @@ struct LevelSelectionSheet: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Category Card with Actions
+
+struct CategoryCardWithActions: View {
+    let category: VocabularyCategory
+    let selectedLevel: YLELevel
+
+    @State private var showActionSheet = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Main category card
+            NavigationLink {
+                WordListView(
+                    category: category,
+                    selectedLevel: selectedLevel
+                )
+            } label: {
+                CategoryCard(category: category)
+            }
+            .buttonStyle(.plain)
+
+            // Quick actions
+            HStack(spacing: 0) {
+                // Flashcards button
+                NavigationLink {
+                    FlashcardDeckView(category: category, level: selectedLevel)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "rectangle.portrait.on.rectangle.portrait")
+                            .font(.system(size: 12))
+                        Text("Cards")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundColor(category.swiftUIColor)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(category.swiftUIColor.opacity(0.1))
+                }
+                .buttonStyle(.plain)
+
+                Divider()
+                    .frame(height: 20)
+
+                // Quiz button
+                NavigationLink {
+                    QuizView(category: category, level: selectedLevel)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "questionmark.circle")
+                            .font(.system(size: 12))
+                        Text("Quiz")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundColor(category.swiftUIColor)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(category.swiftUIColor.opacity(0.1))
+                }
+                .buttonStyle(.plain)
+            }
+            .background(Color.appBackgroundSecondary)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.xl)
+                .strokeBorder(
+                    category.swiftUIColor.opacity(0.3),
+                    lineWidth: 2
+                )
+        )
+        .appShadow(level: .light)
     }
 }
 
