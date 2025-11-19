@@ -1,0 +1,27 @@
+{
+  "name": "yle-x-firebase-migration",
+  "version": "1.0.0",
+  "description": "Migrate Cambridge Vocabulary 2018 to Firebase Firestore",
+  "main": "migrate-to-firebase.js",
+  "scripts": {
+    "migrate": "node migrate-to-firebase.js",
+    "migrate:live": "node migrate-to-firebase.js --live",
+    "test": "node migrate-to-firebase.js"
+  },
+  "keywords": [
+    "firebase",
+    "firestore",
+    "cambridge",
+    "yle",
+    "vocabulary"
+  ],
+  "author": "YLE X Team",
+  "license": "MIT",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "csv-parser": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
