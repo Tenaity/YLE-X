@@ -212,11 +212,11 @@ struct LeaderboardPodium: View {
     private func rankColor(_ rank: Int) -> Color {
         switch rank {
         case 1:
-            return Color(hex: "#FFD700") // Gold
+            return Color(hex: "#FFD700") ?? .yellow // Gold
         case 2:
-            return Color(hex: "#C0C0C0") // Silver
+            return Color(hex: "#C0C0C0") ?? .gray // Silver
         case 3:
-            return Color(hex: "#CD7F32") // Bronze
+            return Color(hex: "#CD7F32") ?? .orange // Bronze
         default:
             return .appTextSecondary
         }
@@ -226,18 +226,18 @@ struct LeaderboardPodium: View {
         switch rank {
         case 1:
             return [
-                Color(hex: "#FFD700"),
-                Color(hex: "#FFA500")
+                Color(hex: "#FFD700") ?? .yellow,
+                Color(hex: "#FFA500") ?? .orange
             ]
         case 2:
             return [
-                Color(hex: "#E8E8E8"),
-                Color(hex: "#C0C0C0")
+                Color(hex: "#E8E8E8") ?? .gray,
+                Color(hex: "#C0C0C0") ?? .gray
             ]
         case 3:
             return [
-                Color(hex: "#E39250"),
-                Color(hex: "#CD7F32")
+                Color(hex: "#E39250") ?? .orange,
+                Color(hex: "#CD7F32") ?? .brown
             ]
         default:
             return [.appTextSecondary, .appTextSecondary]

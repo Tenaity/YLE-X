@@ -241,63 +241,6 @@ struct DataCompleteness: Codable, Hashable {
     }
 }
 
-// MARK: - YLE Level Enum
-
-enum YLELevel: String, CaseIterable, Codable {
-    case starters = "starters"
-    case movers = "movers"
-    case flyers = "flyers"
-
-    var displayName: String {
-        switch self {
-        case .starters: return "Starters"
-        case .movers: return "Movers"
-        case .flyers: return "Flyers"
-        }
-    }
-
-    var displayNameVi: String {
-        switch self {
-        case .starters: return "Sơ Cấp"
-        case .movers: return "Trung Cấp"
-        case .flyers: return "Cao Cấp"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .starters: return "🌱"
-        case .movers: return "🚀"
-        case .flyers: return "✈️"
-        }
-    }
-
-    var color: String {
-        switch self {
-        case .starters: return "#33D633"  // Green
-        case .movers: return "#0077FF"    // Blue
-        case .flyers: return "#B330E3"    // Purple
-        }
-    }
-
-    var ageRange: String {
-        switch self {
-        case .starters: return "7-8 years"
-        case .movers: return "8-11 years"
-        case .flyers: return "9-12 years"
-        }
-    }
-
-    /// Order index for sorting
-    var order: Int {
-        switch self {
-        case .starters: return 0
-        case .movers: return 1
-        case .flyers: return 2
-        }
-    }
-}
-
 // MARK: - Preview Helpers
 
 #if DEBUG

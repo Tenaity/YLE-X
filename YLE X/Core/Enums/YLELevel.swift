@@ -9,9 +9,9 @@ import Foundation
 import SwiftUI
 
 enum YLELevel: String, CaseIterable, Identifiable, Codable {
-    case starters = "Starters"
-    case movers = "Movers"
-    case flyers = "Flyers"
+    case starters = "starters"
+    case movers = "movers"
+    case flyers = "flyers"
     
     var id: String { rawValue }
     
@@ -63,6 +63,45 @@ enum YLELevel: String, CaseIterable, Identifiable, Codable {
         case .starters: return .appLevelStarters.opacity(0.15)
         case .movers: return .appLevelMovers.opacity(0.15)
         case .flyers: return .appLevelFlyers.opacity(0.15)
+        }
+    }
+
+    // MARK: - Additional Properties (for Dictionary feature)
+
+    var displayName: String {
+        switch self {
+        case .starters: return "Starters"
+        case .movers: return "Movers"
+        case .flyers: return "Flyers"
+        }
+    }
+
+    var displayNameVi: String {
+        switch self {
+        case .starters: return "Sơ Cấp"
+        case .movers: return "Trung Cấp"
+        case .flyers: return "Cao Cấp"
+        }
+    }
+
+    var icon: String {
+        return emoji  // Reuse existing emoji property
+    }
+
+    var color: String {
+        switch self {
+        case .starters: return "#33D633"  // Green
+        case .movers: return "#0077FF"    // Blue
+        case .flyers: return "#B330E3"    // Purple
+        }
+    }
+
+    /// Order index for sorting
+    var order: Int {
+        switch self {
+        case .starters: return 0
+        case .movers: return 1
+        case .flyers: return 2
         }
     }
 }

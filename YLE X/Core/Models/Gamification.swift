@@ -36,10 +36,10 @@ struct Badge: Identifiable, Codable {
 
         var borderColor: Color {
             switch self {
-            case .common: return Color(hex: "#4CAF50")
-            case .rare: return Color(hex: "#2196F3")
-            case .epic: return Color(hex: "#9C27B0")
-            case .legendary: return Color(hex: "#FFD700")
+            case .common: return Color(hexString: "#4CAF50") ?? Color.white
+            case .rare: return Color(hexString: "#2196F3") ?? Color.white
+            case .epic: return Color(hexString: "#9C27B0") ?? Color.white
+            case .legendary: return Color(hexString: "#FFD700") ?? Color.white
             }
         }
     }
@@ -316,8 +316,8 @@ struct AnyCodable: Codable {
 
 // MARK: - Color Extension
 extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+    init(hexString: String) {
+        let hex = hexString.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
         let rgb = Int(hex, radix: 16) ?? 0
         let red = Double((rgb >> 16) & 0xFF) / 255.0
         let green = Double((rgb >> 8) & 0xFF) / 255.0

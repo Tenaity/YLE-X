@@ -3,6 +3,7 @@
 //  YLE X
 //
 //  Created by Senior iOS Developer on 6/11/25.
+//  Updated: 11/18/25 - Added Dictionary Integration
 //
 
 import SwiftUI
@@ -19,7 +20,7 @@ struct TabBarView: View {
                 case .home:
                     HomeView()
                 case .learn:
-                    LearnView()
+                    LearningHubView() // NEW: Combined Dictionary + Lessons
                 case .leaderboard:
                     LeaderboardView()
                 case .profile:
@@ -165,10 +166,80 @@ enum Tab: CaseIterable {
     }
 }
 
-// MARK: - Learn View Wrapper
+// MARK: - Learning Hub View (NEW!)
+/// Combined view with Dictionary and Lessons
+struct LearningHubView: View {
+    @State private var selectedMode: LearningMode = .dictionary
+
+    enum LearningMode: String, CaseIterable {
+        case dictionary = "Dictionary"
+        case lessons = "Lessons"
+
+        var icon: String {
+            switch self {
+            case .dictionary: return "book.fill"
+            case .lessons: return "graduationcap.fill"
+            }
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Mode Selector
+                modeSelector
+
+                // Content
+                TabView(selection: $selectedMode) {
+                    VocabularyCategoriesView()
+                        .tag(LearningMode.dictionary)
+
+                    LessonListView()
+                        .tag(LearningMode.lessons)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+            }
+            .navigationTitle("Learning")
+            .navigationBarTitleDisplayMode(.large)
+        }
+    }
+
+    private var modeSelector: some View {
+        HStack(spacing: AppSpacing.sm) {
+            ForEach(LearningMode.allCases, id: \.self) { mode in
+                Button(action: {
+                    withAnimation(.appSmooth) {
+                        selectedMode = mode
+                    }
+                    HapticManager.shared.playSelection()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: mode.icon)
+                            .font(.system(size: 16, weight: .semibold))
+
+                        Text(mode.rawValue)
+                            .font(.system(size: 16, weight: .bold))
+                    }
+                    .foregroundColor(selectedMode == mode ? .white : .appPrimary)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.md)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppRadius.lg)
+                            .fill(selectedMode == mode ? Color.appPrimary : Color.appPrimary.opacity(0.1))
+                    )
+                }
+            }
+        }
+        .padding(AppSpacing.md)
+        .background(Color.appBackground)
+    }
+}
+
+// MARK: - Learn View Wrapper (Keep for backwards compatibility)
 struct LearnView: View {
     var body: some View {
-        LessonListView()
+        LearningHubView()
     }
 }
 

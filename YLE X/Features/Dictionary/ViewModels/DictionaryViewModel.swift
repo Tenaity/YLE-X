@@ -6,9 +6,9 @@
 //  Firebase-powered Dictionary with 1,414 Cambridge words
 //
 
-import Foundation
-import FirebaseFirestore
 import Combine
+import FirebaseFirestore
+import Foundation
 
 @MainActor
 class DictionaryViewModel: ObservableObject {
@@ -43,7 +43,7 @@ class DictionaryViewModel: ObservableObject {
 
     private let db = Firestore.firestore()
     private var cancellables = Set<AnyCancellable>()
-    private var wordsCache: [String: [DictionaryWord]] = [:] // category -> words
+    private var wordsCache: [String: [DictionaryWord]] = [:]  // category -> words
 
     // MARK: - Error Types
 
@@ -91,7 +91,7 @@ class DictionaryViewModel: ObservableObject {
     // MARK: - Fetch Categories
 
     func fetchCategories() async {
-        guard categories.isEmpty else { return } // Only fetch once
+        guard categories.isEmpty else { return }  // Only fetch once
 
         isLoadingCategories = true
         error = nil
@@ -140,9 +140,10 @@ class DictionaryViewModel: ObservableObject {
                 query = query.whereField("levels", arrayContains: level.rawValue)
             }
 
-            let snapshot = try await query
+            let snapshot =
+                try await query
                 .order(by: "word")
-                .limit(to: 200) // Limit for performance
+                .limit(to: 200)  // Limit for performance
                 .getDocuments()
 
             let fetchedWords = snapshot.documents.compactMap { document in
@@ -172,39 +173,75 @@ class DictionaryViewModel: ObservableObject {
 
         isSearching = true
 
-        let lowercasedQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lowercasedQuery = trimmedQuery.lowercased()
+        let capitalizedQuery = lowercasedQuery.prefix(1).uppercased() + lowercasedQuery.dropFirst()
 
         do {
-            // Search by English word (starts with)
-            let englishQuery = db.collection("dictionaries")
+            // 1. Search by lowercase (e.g., "cat")
+            let lowerQueryRef = db.collection("dictionaries")
                 .whereField("word", isGreaterThanOrEqualTo: lowercasedQuery)
                 .whereField("word", isLessThan: lowercasedQuery + "\u{f8ff}")
-                .limit(to: 50)
+                .limit(to: 30)
 
-            let snapshot = try await englishQuery.getDocuments()
+            // 2. Search by capitalized (e.g., "Cat")
+            let capitalQueryRef = db.collection("dictionaries")
+                .whereField("word", isGreaterThanOrEqualTo: capitalizedQuery)
+                .whereField("word", isLessThan: capitalizedQuery + "\u{f8ff}")
+                .limit(to: 30)
 
-            var results = snapshot.documents.compactMap { document in
-                try? document.data(as: DictionaryWord.self)
+            // Run queries concurrently
+            async let lowerSnapshot = lowerQueryRef.getDocuments()
+            async let capitalSnapshot = capitalQueryRef.getDocuments()
+
+            let (lowerDocs, capitalDocs) = try await (lowerSnapshot, capitalSnapshot)
+
+            var results: [DictionaryWord] = []
+
+            // Process lowercase results
+            let lowerWords = lowerDocs.documents.compactMap {
+                try? $0.data(as: DictionaryWord.self)
             }
+            results.append(contentsOf: lowerWords)
 
-            // Also search in Vietnamese translations (client-side filter)
+            // Process capitalized results
+            let capitalWords = capitalDocs.documents.compactMap {
+                try? $0.data(as: DictionaryWord.self)
+            }
+            results.append(contentsOf: capitalWords)
+
+            // 3. Search in Vietnamese translations (client-side filter)
+            // Note: For a large dataset, this should be an Algolia/Elasticsearch query.
+            // Here we limit to a reasonable number to check.
             let allWordsQuery = db.collection("dictionaries")
-                .limit(to: 200)
+                .limit(to: 200)  // Limit to avoid fetching too much
 
             let allSnapshot = try await allWordsQuery.getDocuments()
-            let allWords = allSnapshot.documents.compactMap { document in
-                try? document.data(as: DictionaryWord.self)
+            let allWords = allSnapshot.documents.compactMap {
+                try? $0.data(as: DictionaryWord.self)
             }
 
             let vietnameseMatches = allWords.filter {
                 $0.translationVi.lowercased().contains(lowercasedQuery)
             }
-
-            // Combine results and remove duplicates
             results.append(contentsOf: vietnameseMatches)
-            results = Array(Set(results)).sorted { $0.word < $1.word }
 
-            searchResults = results.prefix(30).map { $0 } // Limit to 30 results
+            // Deduplicate and sort
+            // Use a Set of IDs to deduplicate
+            var uniqueResults: [DictionaryWord] = []
+            var seenIds: Set<String> = []
+
+            for word in results {
+                if let id = word.id, !seenIds.contains(id) {
+                    seenIds.insert(id)
+                    uniqueResults.append(word)
+                } else if word.id == nil {
+                    // Fallback if ID is missing (shouldn't happen with FirestoreCodable)
+                    uniqueResults.append(word)
+                }
+            }
+
+            searchResults = uniqueResults.sorted { $0.word < $1.word }
             isSearching = false
 
             print("✅ Found \(searchResults.count) results for '\(query)'")
@@ -296,13 +333,13 @@ class DictionaryViewModel: ObservableObject {
 // MARK: - Preview Helpers
 
 #if DEBUG
-extension DictionaryViewModel {
-    static let preview: DictionaryViewModel = {
-        let vm = DictionaryViewModel()
-        vm.categories = VocabularyCategory.samples
-        vm.words = DictionaryWord.samples
-        vm.selectedCategory = VocabularyCategory.sample
-        return vm
-    }()
-}
+    extension DictionaryViewModel {
+        static let preview: DictionaryViewModel = {
+            let vm = DictionaryViewModel()
+            vm.categories = VocabularyCategory.samples
+            vm.words = DictionaryWord.samples
+            vm.selectedCategory = VocabularyCategory.sample
+            return vm
+        }()
+    }
 #endif
