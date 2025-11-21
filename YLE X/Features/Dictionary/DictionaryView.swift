@@ -10,6 +10,7 @@ import SwiftUI
 
 struct DictionaryView: View {
     @StateObject private var viewModel = DictionaryViewModel()
+    @StateObject private var audioService = AudioPlayerService()
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
 
@@ -51,7 +52,9 @@ struct DictionaryView: View {
                     .font(.system(size: 16))
                     .submitLabel(.search)
                     .onSubmit {
-                        viewModel.search(query: searchText)
+                        Task {
+                            await viewModel.searchWords(query: searchText)
+                        }
                     }
 
                 if !searchText.isEmpty {
@@ -103,10 +106,12 @@ struct DictionaryView: View {
                     .foregroundColor(.appTextSecondary)
 
                 HStack(spacing: AppSpacing.sm) {
-                    ForEach(["hello", "thank you", "goodbye"], id: \.self) { word in
+                    ForEach(["hello", "thank you", "goodbye"] as [String], id: \.self) { word in
                         Button(action: {
                             searchText = word
-                            viewModel.search(query: word)
+                            Task {
+                                await viewModel.searchWords(query: word)
+                            }
                         }) {
                             Text(word)
                                 .font(.system(size: 14, weight: .medium))
@@ -171,7 +176,7 @@ struct DictionaryView: View {
         ScrollView {
             LazyVStack(spacing: AppSpacing.md) {
                 ForEach(viewModel.searchResults) { result in
-                    DictionaryResultCard(result: result)
+                    DictionaryResultCard(result: result, audioService: audioService)
                 }
             }
             .padding(.horizontal, AppSpacing.lg)
@@ -183,6 +188,7 @@ struct DictionaryView: View {
 // MARK: - Dictionary Result Card
 struct DictionaryResultCard: View {
     let result: DictionaryWord
+    @ObservedObject var audioService: AudioPlayerService
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -193,30 +199,26 @@ struct DictionaryResultCard: View {
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.appText)
 
-                    if let phonetic = result.phonetic {
-                        Text("/\(phonetic)/")
-                            .font(.system(size: 16))
-                            .foregroundColor(.appTextSecondary)
-                    }
+                    Text(result.pronunciation.british.ipa)
+                        .font(.system(size: 16))
+                        .foregroundColor(.appTextSecondary)
 
-                    if let partOfSpeech = result.partOfSpeech {
-                        Text(partOfSpeech)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.appPrimary)
-                            .padding(.horizontal, AppSpacing.sm)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(Color.appPrimary.opacity(0.1))
-                            )
-                    }
+                    Text(result.primaryPos)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.appPrimary)
+                        .padding(.horizontal, AppSpacing.sm)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(Color.appPrimary.opacity(0.1))
+                        )
                 }
 
                 Spacer()
 
                 // Pronunciation Button
                 Button(action: {
-                    result.speak()
+                    audioService.playAudio(for: result, accent: .british)
                 }) {
                     Image(systemName: "speaker.wave.2.fill")
                         .font(.system(size: 20))
@@ -237,32 +239,30 @@ struct DictionaryResultCard: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.appTextSecondary)
 
-                Text(result.definition)
+                Text(result.definitionEn)
                     .font(.system(size: 16))
                     .foregroundColor(.appText)
             }
 
             // Vietnamese Translation
-            if let vietnamese = result.vietnamese {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("Vietnamese:")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.appTextSecondary)
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("Vietnamese:")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.appTextSecondary)
 
-                    Text(vietnamese)
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.appPrimary)
-                }
+                Text(result.translationVi)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.appPrimary)
             }
 
             // Example
-            if let example = result.example {
+            if let example = result.examples.first {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("Example:")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.appTextSecondary)
 
-                    Text(example)
+                    Text(example.sentenceEn)
                         .font(.system(size: 15))
                         .foregroundColor(.appTextSecondary)
                         .italic()

@@ -148,7 +148,7 @@ struct QuizQuestion: Identifiable {
         guard let example = word.examples.first else { return nil }
 
         // Replace word with blank
-        let sentence = example.sentence
+        let sentence = example.sentenceEn
         let blank = "________"
         let questionText = sentence.replacingOccurrences(
             of: word.word,

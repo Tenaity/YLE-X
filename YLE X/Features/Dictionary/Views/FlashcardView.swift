@@ -119,8 +119,11 @@ struct FlashcardView: View {
                 HapticManager.shared.playLight()
             }) {
                 HStack(spacing: 8) {
-                    Image(systemName: audioService.isPlaying ? "speaker.wave.3.fill" : "speaker.wave.2")
-                        .font(.system(size: 18, weight: .semibold))
+                    Image(
+                        systemName: audioService.isPlaying
+                            ? "speaker.wave.3.fill" : "speaker.wave.2"
+                    )
+                    .font(.system(size: 18, weight: .semibold))
                     Text("Listen")
                         .font(.system(size: 16, weight: .bold))
                 }
@@ -136,12 +139,12 @@ struct FlashcardView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: AppRadius.xl2)
+            RoundedRectangle(cornerRadius: AppRadius.xl)
                 .fill(Color.appBackgroundSecondary)
                 .shadow(color: .black.opacity(0.1), radius: 20, y: 10)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl2)
+            RoundedRectangle(cornerRadius: AppRadius.xl)
                 .strokeBorder(Color.appPrimary.opacity(0.2), lineWidth: 2)
         )
         .padding(.horizontal, AppSpacing.lg)
@@ -204,7 +207,7 @@ struct FlashcardView: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.appTextSecondary)
 
-                        Text(firstExample.translationVi)
+                        Text(firstExample.sentenceVi)
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.appTextSecondary)
                             .italic()
@@ -244,12 +247,12 @@ struct FlashcardView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: AppRadius.xl2)
+            RoundedRectangle(cornerRadius: AppRadius.xl)
                 .fill(
                     LinearGradient(
                         colors: [
                             Color.appSecondary.opacity(0.1),
-                            Color.appBackgroundSecondary
+                            Color.appBackgroundSecondary,
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -258,7 +261,7 @@ struct FlashcardView: View {
                 .shadow(color: .black.opacity(0.1), radius: 20, y: 10)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.xl2)
+            RoundedRectangle(cornerRadius: AppRadius.xl)
                 .strokeBorder(Color.appSecondary.opacity(0.3), lineWidth: 2)
         )
         .padding(.horizontal, AppSpacing.lg)
@@ -356,10 +359,11 @@ struct FlashcardDeckView: View {
             if let currentCard = session.currentCard {
                 FlashcardView(word: currentCard, audioService: audioService)
                     .id(currentCard.id)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
             }
 
             // Action buttons
@@ -523,7 +527,7 @@ struct FlashcardDeckView: View {
                 LazyVGrid(
                     columns: [
                         GridItem(.flexible()),
-                        GridItem(.flexible())
+                        GridItem(.flexible()),
                     ],
                     spacing: AppSpacing.md
                 ) {

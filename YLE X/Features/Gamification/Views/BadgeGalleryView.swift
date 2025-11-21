@@ -78,17 +78,23 @@ struct BadgeGalleryView: View {
                                     .padding(.horizontal, AppSpacing.md)
 
                                 LazyVGrid(
-                                    columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                                    columns: [
+                                        GridItem(.flexible()), GridItem(.flexible()),
+                                        GridItem(.flexible()),
+                                    ],
                                     spacing: AppSpacing.md
                                 ) {
-                                    ForEach(Array(unlockedBadges.enumerated()), id: \.element.id) { index, badge in
+                                    ForEach(Array(unlockedBadges.enumerated()), id: \.element.id) {
+                                        index, badge in
                                         GamificationBadgeCard(badge: badge, isUnlocked: true) {
                                             HapticManager.shared.playLight()
                                             selectedBadge = badge
                                         }
                                         .opacity(animateBadges ? 1 : 0)
                                         .scaleEffect(animateBadges ? 1 : 0.5)
-                                        .animation(.appBouncy.delay(Double(index) * 0.05), value: animateBadges)
+                                        .animation(
+                                            .appBouncy.delay(Double(index) * 0.05),
+                                            value: animateBadges)
                                     }
                                 }
                                 .padding(.horizontal, AppSpacing.md)
@@ -104,17 +110,24 @@ struct BadgeGalleryView: View {
                                     .padding(.horizontal, AppSpacing.md)
 
                                 LazyVGrid(
-                                    columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                                    columns: [
+                                        GridItem(.flexible()), GridItem(.flexible()),
+                                        GridItem(.flexible()),
+                                    ],
                                     spacing: AppSpacing.md
                                 ) {
-                                    ForEach(Array(lockedBadges.enumerated()), id: \.element.id) { index, badge in
+                                    ForEach(Array(lockedBadges.enumerated()), id: \.element.id) {
+                                        index, badge in
                                         GamificationBadgeCard(badge: badge, isUnlocked: false) {
                                             HapticManager.shared.playLight()
                                             selectedBadge = badge
                                         }
                                         .opacity(animateBadges ? 1 : 0)
                                         .scaleEffect(animateBadges ? 1 : 0.5)
-                                        .animation(.appBouncy.delay(Double(unlockedBadges.count + index) * 0.05), value: animateBadges)
+                                        .animation(
+                                            .appBouncy.delay(
+                                                Double(unlockedBadges.count + index) * 0.05),
+                                            value: animateBadges)
                                     }
                                 }
                                 .padding(.horizontal, AppSpacing.md)
@@ -157,8 +170,8 @@ struct GamificationBadgeCard: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color(hex: badge.color),
-                                    Color(hex: badge.color).opacity(0.6)
+                                    Color(hexString: badge.color),
+                                    Color(hexString: badge.color).opacity(0.6),
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -223,7 +236,7 @@ struct BadgeDetailView: View {
         NavigationStack {
             ZStack {
                 LinearGradient(
-                    colors: [Color.appBackground, Color(hex: badge.color).opacity(0.1)],
+                    colors: [Color.appBackground, Color(hexString: badge.color).opacity(0.1)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -237,8 +250,8 @@ struct BadgeDetailView: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color(hex: badge.color),
-                                            Color(hex: badge.color).opacity(0.5)
+                                            Color(hexString: badge.color),
+                                            Color(hexString: badge.color).opacity(0.5),
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing

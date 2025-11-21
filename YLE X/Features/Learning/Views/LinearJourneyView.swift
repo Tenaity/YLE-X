@@ -682,13 +682,7 @@ struct BossBattleCard: View {
 
 // MARK: - YLELevel Extension for UI
 extension YLELevel {
-    var order: Int {
-        switch self {
-        case .starters: return 0
-        case .movers: return 1
-        case .flyers: return 2
-        }
-    }
+
 
     var nextPhase: YLELevel? {
         switch self {

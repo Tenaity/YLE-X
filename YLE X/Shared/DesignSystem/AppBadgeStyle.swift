@@ -32,7 +32,7 @@ struct AppBadgeView: View {
         .background(badgeColor.opacity(0.1))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md)
-                .stroke(badgeColor, lineWidth: 1.5)
+                .stroke(badgeColor ?? .yellow, lineWidth: 1.5)
         )
         .cornerRadius(AppRadius.md)
         .appShadow(level: .subtle)

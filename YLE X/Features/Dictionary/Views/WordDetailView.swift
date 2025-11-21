@@ -328,7 +328,7 @@ struct WordDetailView: View {
                             }
                             .foregroundColor(Color(hex: level.color) ?? .blue)
                             .padding(.horizontal, 10)
-                            .padding(.vertical: 4)
+                            .padding(.vertical, 4)
                             .background(
                                 Capsule()
                                     .fill(Color(hex: level.color)?.opacity(0.12) ?? .blue.opacity(0.12))
@@ -375,7 +375,7 @@ struct WordDetailView: View {
             }
             .foregroundColor(.appText)
 
-            FlowLayout(spacing: 8) {
+            DictionaryFlowLayout(spacing: 8) {
                 ForEach(word.categories, id: \.self) { categoryId in
                     if let categoryType = CategoryType(rawValue: categoryId) {
                         HStack(spacing: 6) {
@@ -525,7 +525,7 @@ struct ExampleCard: View {
 
 // MARK: - Flow Layout
 
-struct FlowLayout: Layout {
+struct DictionaryFlowLayout: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
