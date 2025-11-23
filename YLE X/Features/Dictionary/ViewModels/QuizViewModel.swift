@@ -6,9 +6,9 @@
 //  Manages quiz sessions and question generation
 //
 
-import Foundation
-import FirebaseFirestore
 import Combine
+import FirebaseFirestore
+import Foundation
 
 @MainActor
 class QuizViewModel: ObservableObject {
@@ -40,13 +40,22 @@ class QuizViewModel: ObservableObject {
 
         do {
             // Fetch words for category and level
+            // Fetch words for category (Firestore filter)
+            // Note: Firestore only allows one array-contains filter.
+            // We filter by category in DB and by level in memory.
             let query = db.collection("dictionaries")
                 .whereField("categories", arrayContains: category.categoryId)
-                .whereField("levels", arrayContains: level.rawValue)
 
-            let snapshot = try await query.limit(to: questionCount * 2).getDocuments()
-            allWords = snapshot.documents.compactMap {
+            // Fetch more documents to account for client-side filtering
+            let snapshot = try await query.limit(to: questionCount * 5).getDocuments()
+
+            let fetchedWords = snapshot.documents.compactMap {
                 try? $0.data(as: DictionaryWord.self)
+            }
+
+            // Filter by level in memory
+            allWords = fetchedWords.filter { word in
+                word.levels.contains(level.rawValue)
             }
 
             guard allWords.count >= 4 else {
@@ -127,7 +136,7 @@ class QuizViewModel: ObservableObject {
             .multipleChoice,
             .listening,
             .translation,
-            .reverseTranslation
+            .reverseTranslation,
         ]
 
         let randomType = questionTypes.randomElement()!
@@ -159,7 +168,8 @@ class QuizViewModel: ObservableObject {
             let samePOS = candidate.partOfSpeech.contains(where: { word.partOfSpeech.contains($0) })
 
             // Prefer same category
-            let sameCategory = candidate.categories.contains(where: { word.categories.contains($0) })
+            let sameCategory = candidate.categories.contains(where: { word.categories.contains($0) }
+            )
 
             return samePOS || sameCategory
         }
@@ -180,7 +190,8 @@ class QuizViewModel: ObservableObject {
     /// Submit answer for current question
     func submitAnswer(_ answer: String) {
         guard var session = currentSession,
-              let question = session.currentQuestion else { return }
+            let question = session.currentQuestion
+        else { return }
 
         session.submitAnswer(answer)
         currentSession = session
@@ -280,7 +291,7 @@ class QuizViewModel: ObservableObject {
             "xpEarned": results.xpEarned,
             "gemsEarned": results.gemsEarned,
             "duration": results.formattedDuration,
-            "completedAt": Timestamp(date: results.completedAt)
+            "completedAt": Timestamp(date: results.completedAt),
         ]
 
         try await db.collection("quiz_results").addDocument(data: data)
@@ -313,9 +324,10 @@ class QuizViewModel: ObservableObject {
 
             for doc in results {
                 if let score = doc.data()["score"] as? Int,
-                   let questions = doc.data()["totalQuestions"] as? Int,
-                   let xp = doc.data()["xpEarned"] as? Int,
-                   let gems = doc.data()["gemsEarned"] as? Int {
+                    let questions = doc.data()["totalQuestions"] as? Int,
+                    let xp = doc.data()["xpEarned"] as? Int,
+                    let gems = doc.data()["gemsEarned"] as? Int
+                {
                     totalScore += score
                     totalQuestions += questions
                     totalXP += xp
@@ -323,7 +335,8 @@ class QuizViewModel: ObservableObject {
                 }
             }
 
-            let averageAccuracy = totalQuestions > 0
+            let averageAccuracy =
+                totalQuestions > 0
                 ? Double(totalScore) / Double(totalQuestions) * 100
                 : 0
 

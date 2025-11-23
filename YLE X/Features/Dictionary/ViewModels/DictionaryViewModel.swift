@@ -34,6 +34,7 @@ class DictionaryViewModel: ObservableObject {
     // Loading States
     @Published var isLoadingCategories = false
     @Published var isLoadingWords = false
+    @Published var suggestions: [DictionaryWord] = []
     @Published var isSearching = false
 
     // Error
@@ -173,61 +174,64 @@ class DictionaryViewModel: ObservableObject {
 
         isSearching = true
 
-        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        let lowercasedQuery = trimmedQuery.lowercased()
-        let capitalizedQuery = lowercasedQuery.prefix(1).uppercased() + lowercasedQuery.dropFirst()
+        // Normalize query to match wordId generation in migration script:
+        // .toLowerCase().replace(/\s+/g, '_').replace(/'/g, '').replace(/-/g, '_')
+        let normalizedQuery = query.lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "'", with: "")
+            .replacingOccurrences(of: "-", with: "_")
+
+        // Also keep raw lowercase for Vietnamese search
+        let lowercasedQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
         do {
-            // 1. Search by lowercase (e.g., "cat")
-            let lowerQueryRef = db.collection("dictionaries")
-                .whereField("word", isGreaterThanOrEqualTo: lowercasedQuery)
-                .whereField("word", isLessThan: lowercasedQuery + "\u{f8ff}")
+            // 1. Search by wordId (normalized) - Primary Search
+            // We use >= and <= to allow prefix matching on the ID
+            let idQueryRef = db.collection("dictionaries")
+                .whereField("wordId", isGreaterThanOrEqualTo: normalizedQuery)
+                .whereField("wordId", isLessThan: normalizedQuery + "\u{f8ff}")
                 .limit(to: 30)
 
-            // 2. Search by capitalized (e.g., "Cat")
-            let capitalQueryRef = db.collection("dictionaries")
-                .whereField("word", isGreaterThanOrEqualTo: capitalizedQuery)
-                .whereField("word", isLessThan: capitalizedQuery + "\u{f8ff}")
-                .limit(to: 30)
-
-            // Run queries concurrently
-            async let lowerSnapshot = lowerQueryRef.getDocuments()
-            async let capitalSnapshot = capitalQueryRef.getDocuments()
-
-            let (lowerDocs, capitalDocs) = try await (lowerSnapshot, capitalSnapshot)
-
-            var results: [DictionaryWord] = []
-
-            // Process lowercase results
-            let lowerWords = lowerDocs.documents.compactMap {
-                try? $0.data(as: DictionaryWord.self)
-            }
-            results.append(contentsOf: lowerWords)
-
-            // Process capitalized results
-            let capitalWords = capitalDocs.documents.compactMap {
-                try? $0.data(as: DictionaryWord.self)
-            }
-            results.append(contentsOf: capitalWords)
-
-            // 3. Search in Vietnamese translations (client-side filter)
+            // 2. Search in Vietnamese translations (client-side filter)
             // Note: For a large dataset, this should be an Algolia/Elasticsearch query.
-            // Here we limit to a reasonable number to check.
             let allWordsQuery = db.collection("dictionaries")
                 .limit(to: 200)  // Limit to avoid fetching too much
 
-            let allSnapshot = try await allWordsQuery.getDocuments()
-            let allWords = allSnapshot.documents.compactMap {
-                try? $0.data(as: DictionaryWord.self)
-            }
+            // Run queries concurrently
+            async let idSnapshot = idQueryRef.getDocuments()
+            async let allSnapshot = allWordsQuery.getDocuments()
 
+            let (idDocs, allDocs) = try await (idSnapshot, allSnapshot)
+
+            var results: [DictionaryWord] = []
+
+            // Process ID results with detailed error logging
+            let idWords = idDocs.documents.compactMap { doc -> DictionaryWord? in
+                do {
+                    return try doc.data(as: DictionaryWord.self)
+                } catch {
+                    print("   ❌ Failed to decode ID result (doc: \(doc.documentID)): \(error)")
+                    return nil
+                }
+            }
+            results.append(contentsOf: idWords)
+
+            // Process Vietnamese matches
+            let allWords = allDocs.documents.compactMap { doc -> DictionaryWord? in
+                do {
+                    return try doc.data(as: DictionaryWord.self)
+                } catch {
+                    print(
+                        "   ❌ Failed to decode All Words result (doc: \(doc.documentID)): \(error)")
+                    return nil
+                }
+            }
             let vietnameseMatches = allWords.filter {
                 $0.translationVi.lowercased().contains(lowercasedQuery)
             }
             results.append(contentsOf: vietnameseMatches)
 
             // Deduplicate and sort
-            // Use a Set of IDs to deduplicate
             var uniqueResults: [DictionaryWord] = []
             var seenIds: Set<String> = []
 
@@ -236,7 +240,6 @@ class DictionaryViewModel: ObservableObject {
                     seenIds.insert(id)
                     uniqueResults.append(word)
                 } else if word.id == nil {
-                    // Fallback if ID is missing (shouldn't happen with FirestoreCodable)
                     uniqueResults.append(word)
                 }
             }
@@ -244,10 +247,8 @@ class DictionaryViewModel: ObservableObject {
             searchResults = uniqueResults.sorted { $0.word < $1.word }
             isSearching = false
 
-            print("✅ Found \(searchResults.count) results for '\(query)'")
-
         } catch {
-            print("❌ Search failed: \(error)")
+            print("❌ [Dictionary] Search failed: \(error)")
             self.error = .networkError
             isSearching = false
             searchResults = []
@@ -294,11 +295,48 @@ class DictionaryViewModel: ObservableObject {
         await fetchWords(for: category, level: level)
     }
 
-    // MARK: - Clear Search
+    // MARK: - Suggestions
+
+    func fetchSuggestions(query: String) async {
+        guard !query.isEmpty else {
+            suggestions = []
+            return
+        }
+
+        // Normalize query
+        let normalizedQuery = query.lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "'", with: "")
+            .replacingOccurrences(of: "-", with: "_")
+
+        do {
+            // Search by wordId (normalized)
+            let queryRef = db.collection("dictionaries")
+                .whereField("wordId", isGreaterThanOrEqualTo: normalizedQuery)
+                .whereField("wordId", isLessThan: normalizedQuery + "\u{f8ff}")
+                .limit(to: 10)  // Limit to 5 suggestions
+
+            let snapshot = try await queryRef.getDocuments()
+
+            let results = snapshot.documents.compactMap { doc -> DictionaryWord? in
+                try? doc.data(as: DictionaryWord.self)
+            }
+
+            suggestions = results.sorted { $0.word < $1.word }
+
+        } catch {
+            print("❌ [Dictionary] Fetch suggestions failed: \(error)")
+            suggestions = []
+        }
+    }
+
+    // MARK: - Helper Methods
 
     func clearSearch() {
-        searchQuery = ""
         searchResults = []
+        suggestions = []
+        isSearching = false
+        error = nil
     }
 
     // MARK: - Select Category
