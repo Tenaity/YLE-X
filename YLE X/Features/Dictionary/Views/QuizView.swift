@@ -31,10 +31,13 @@ struct QuizView: View {
                 resultsView(results)
             } else if let session = viewModel.currentSession {
                 quizView(session)
+            } else if let error = viewModel.errorMessage {
+                errorView(message: error)
             }
         }
         .navigationTitle("\(category.icon) Quiz")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
     }
 
     // MARK: - Mode Selection
@@ -132,10 +135,11 @@ struct QuizView: View {
             if let question = session.currentQuestion {
                 questionCard(question, session: session)
                     .id(question.id)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
             }
 
             Spacer()
@@ -295,9 +299,12 @@ struct QuizView: View {
                         .fill(Color.appPrimary.opacity(0.15))
                         .frame(width: 100, height: 100)
 
-                    Image(systemName: audioService.isPlaying ? "speaker.wave.3.fill" : "play.circle.fill")
-                        .font(.system(size: 50))
-                        .foregroundColor(.appPrimary)
+                    Image(
+                        systemName: audioService.isPlaying
+                            ? "speaker.wave.3.fill" : "play.circle.fill"
+                    )
+                    .font(.system(size: 50))
+                    .foregroundColor(.appPrimary)
                 }
 
                 Text("Tap to listen")
@@ -376,7 +383,7 @@ struct QuizView: View {
                 LazyVGrid(
                     columns: [
                         GridItem(.flexible()),
-                        GridItem(.flexible())
+                        GridItem(.flexible()),
                     ],
                     spacing: AppSpacing.md
                 ) {
@@ -546,6 +553,42 @@ struct QuizView: View {
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.appTextSecondary)
         }
+    }
+
+    // MARK: - Error View
+
+    private func errorView(message: String) -> some View {
+        VStack(spacing: AppSpacing.lg) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.appWarning)
+
+            Text("Oops!")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(.appText)
+
+            Text(message)
+                .font(.system(size: 16))
+                .foregroundColor(.appTextSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, AppSpacing.xl)
+
+            Button(action: {
+                showModeSelection = true
+                viewModel.errorMessage = nil
+            }) {
+                Text("Try Again")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.vertical, AppSpacing.md)
+                    .background(
+                        Capsule()
+                            .fill(Color.appPrimary)
+                    )
+            }
+        }
+        .padding(AppSpacing.xl)
     }
 }
 

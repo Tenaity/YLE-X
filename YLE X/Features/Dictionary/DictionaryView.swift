@@ -41,43 +41,95 @@ struct DictionaryView: View {
 
     // MARK: - Search Bar
     private var searchBar: some View {
-        HStack(spacing: AppSpacing.sm) {
+        VStack(spacing: 0) {
             HStack(spacing: AppSpacing.sm) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.appTextSecondary)
-                    .font(.system(size: 16))
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.appTextSecondary)
+                        .font(.system(size: 16))
 
-                TextField("Search English or Vietnamese...", text: $searchText)
-                    .focused($isSearchFocused)
-                    .font(.system(size: 16))
-                    .submitLabel(.search)
-                    .onSubmit {
-                        Task {
-                            await viewModel.searchWords(query: searchText)
+                    TextField("Search English or Vietnamese...", text: $searchText)
+                        .focused($isSearchFocused)
+                        .font(.system(size: 16))
+                        .submitLabel(.search)
+                        .onChange(of: searchText) { newValue in
+                            Task {
+                                await viewModel.fetchSuggestions(query: newValue)
+                            }
+                        }
+                        .onSubmit {
+                            Task {
+                                viewModel.suggestions = []  // Hide suggestions on submit
+                                await viewModel.searchWords(query: searchText)
+                            }
+                        }
+
+                    if !searchText.isEmpty {
+                        Button(action: {
+                            searchText = ""
+                            viewModel.clearSearch()
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.appTextSecondary)
+                                .font(.system(size: 16))
                         }
                     }
+                }
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: AppRadius.md)
+                        .fill(Color(UIColor.secondarySystemBackground))
+                )
+            }
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.vertical, AppSpacing.md)
+            .background(Color.appBackground)
+            .zIndex(1)  // Ensure search bar is above suggestions
 
-                if !searchText.isEmpty {
-                    Button(action: {
-                        searchText = ""
-                        viewModel.clearSearch()
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.appTextSecondary)
-                            .font(.system(size: 16))
+            // Suggestions List Overlay
+            if !viewModel.suggestions.isEmpty && isSearchFocused {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(viewModel.suggestions) { suggestion in
+                            Button(action: {
+                                searchText = suggestion.word
+                                isSearchFocused = false
+                                Task {
+                                    viewModel.suggestions = []
+                                    await viewModel.searchWords(query: suggestion.word)
+                                }
+                            }) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(suggestion.word)
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundColor(.appText)
+
+                                        Text(suggestion.translationVi)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.appTextSecondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "arrow.up.left")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.appTextSecondary)
+                                }
+                                .padding(.horizontal, AppSpacing.lg)
+                                .padding(.vertical, AppSpacing.sm)
+                                .background(Color.appBackground)
+                            }
+                            Divider()
+                                .padding(.leading, AppSpacing.lg)
+                        }
                     }
                 }
+                .frame(maxHeight: 250)
+                .background(Color.appBackground)
+                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
+                .transition(.opacity)
             }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .fill(Color(UIColor.secondarySystemBackground))
-            )
         }
-        .padding(.horizontal, AppSpacing.lg)
-        .padding(.vertical, AppSpacing.md)
-        .background(Color.appBackground)
     }
 
     // MARK: - Empty State
@@ -189,6 +241,7 @@ struct DictionaryView: View {
 struct DictionaryResultCard: View {
     let result: DictionaryWord
     @ObservedObject var audioService: AudioPlayerService
+    @State private var selectedExampleLevel: YLELevel = .starters
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -255,17 +308,70 @@ struct DictionaryResultCard: View {
                     .foregroundColor(.appPrimary)
             }
 
-            // Example
-            if let example = result.examples.first {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("Example:")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.appTextSecondary)
+            // Example Tabs
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("Example:")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.appTextSecondary)
 
-                    Text(example.sentenceEn)
-                        .font(.system(size: 15))
+                // Tabs
+                HStack(spacing: 0) {
+                    ForEach(YLELevel.allCases, id: \.self) { level in
+                        Button(action: {
+                            withAnimation {
+                                selectedExampleLevel = level
+                            }
+                        }) {
+                            Text(level.rawValue.capitalized)
+                                .font(
+                                    .system(
+                                        size: 14,
+                                        weight: selectedExampleLevel == level ? .semibold : .medium)
+                                )
+                                .foregroundColor(
+                                    selectedExampleLevel == level ? .white : .appTextSecondary
+                                )
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 12)
+                                .background(
+                                    Capsule()
+                                        .fill(
+                                            selectedExampleLevel == level
+                                                ? Color.appPrimary : Color.clear)
+                                )
+                        }
+                    }
+                }
+                .padding(4)
+                .background(
+                    Capsule()
+                        .fill(Color(UIColor.secondarySystemBackground))
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.appTextSecondary.opacity(0.1), lineWidth: 1)
+                        )
+                )
+
+                // Example Content
+                if let example = result.example(for: selectedExampleLevel) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        Text(example.sentenceEn)
+                            .font(.system(size: 15))
+                            .foregroundColor(.appText)
+
+                        Text(example.sentenceVi)
+                            .font(.system(size: 14))
+                            .foregroundColor(.appTextSecondary)
+                            .italic()
+                    }
+                    .padding(.top, 4)
+                    .transition(.opacity)
+                } else {
+                    Text("No example for \(selectedExampleLevel.rawValue.capitalized)")
+                        .font(.system(size: 14))
                         .foregroundColor(.appTextSecondary)
                         .italic()
+                        .padding(.top, 4)
                 }
             }
         }
@@ -275,6 +381,10 @@ struct DictionaryResultCard: View {
                 .fill(Color(UIColor.secondarySystemBackground))
                 .appShadow(level: .light)
         )
+        .onAppear {
+            // Set initial level to the word's primary level
+            selectedExampleLevel = result.level
+        }
     }
 }
 
