@@ -133,22 +133,41 @@ class DictionaryViewModel: ObservableObject {
         selectedCategory = category
 
         do {
-            var query: Query = db.collection("dictionaries")
+            // Query by category only (Firestore limit: only 1 ARRAY_CONTAINS per query)
+            let query: Query = db.collection("dictionaries")
                 .whereField("categories", arrayContains: category.categoryId)
 
-            // Filter by level if specified
+            print("🔍 Dictionary Query:")
+            print("   Category: \(category.categoryId)")
             if let level = level {
-                query = query.whereField("levels", arrayContains: level.rawValue)
+                print("   Level: \(level.rawValue)")
             }
 
             let snapshot =
                 try await query
                 .order(by: "word")
-                .limit(to: 200)  // Limit for performance
+                .limit(to: 300)  // Fetch more to ensure enough after level filtering
                 .getDocuments()
 
-            let fetchedWords = snapshot.documents.compactMap { document in
+            print("   Documents found: \(snapshot.documents.count)")
+
+            var fetchedWords = snapshot.documents.compactMap { document in
                 try? document.data(as: DictionaryWord.self)
+            }
+
+            print("   Words decoded: \(fetchedWords.count)")
+
+            // Filter by level on client side if specified
+            if let level = level {
+                fetchedWords = fetchedWords.filter { word in
+                    word.levels.contains(level.rawValue)
+                }
+                print("   After level filter: \(fetchedWords.count)")
+            }
+
+            // Limit to 200 words for performance
+            if fetchedWords.count > 200 {
+                fetchedWords = Array(fetchedWords.prefix(200))
             }
 
             words = fetchedWords
@@ -165,6 +184,47 @@ class DictionaryViewModel: ObservableObject {
     }
 
     // MARK: - Search Words
+
+    func searchExactWord(word: String) async {
+        guard !word.isEmpty else {
+            searchResults = []
+            return
+        }
+
+        isSearching = true
+
+        let normalizedWord = word.lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "'", with: "")
+            .replacingOccurrences(of: "-", with: "_")
+
+        do {
+            let snapshot = try await db.collection("dictionaries")
+                .whereField("wordId", isEqualTo: normalizedWord)
+                .limit(to: 1)
+                .getDocuments()
+
+            let results = snapshot.documents.compactMap { doc -> DictionaryWord? in
+                try? doc.data(as: DictionaryWord.self)
+            }
+
+            searchResults = results
+            isSearching = false
+
+            if results.isEmpty {
+                print("⚠️ No exact match found for: \(word), falling back to general search")
+                await searchWords(query: word)
+            } else {
+                print("✅ Found exact match for: \(word)")
+            }
+
+        } catch {
+            print("❌ [Dictionary] Exact search failed: \(error)")
+            self.error = .networkError
+            isSearching = false
+            searchResults = []
+        }
+    }
 
     func searchWords(query: String) async {
         guard !query.isEmpty else {

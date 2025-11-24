@@ -336,6 +336,16 @@ struct FlashcardDeckView: View {
         }
         .navigationTitle("\(category.icon) Flashcards")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)  // Hide tab bar for full screen experience
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
         .task {
             await viewModel.loadUserProgress()
             await viewModel.startSession(
@@ -429,83 +439,120 @@ struct FlashcardDeckView: View {
         .padding(.bottom, AppSpacing.md)
     }
 
-    // MARK: - Action Buttons
+    // MARK: - Action Buttons (SM-2 4-Button System)
 
     private var actionButtons: some View {
-        HStack(spacing: AppSpacing.xl) {
-            // Don't Know button
-            Button(action: {
-                Task {
-                    await viewModel.markIncorrect()
-                }
-            }) {
-                VStack(spacing: 8) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.appError.opacity(0.15))
-                            .frame(width: 70, height: 70)
-
-                        Image(systemName: "xmark")
-                            .font(.system(size: 30, weight: .bold))
-                            .foregroundColor(.appError)
+        VStack(spacing: AppSpacing.md) {
+            // Preview intervals (optional - shows next review time)
+            if let previews = getPreviewIntervals() {
+                HStack(spacing: AppSpacing.sm) {
+                    ForEach(SpacedRepetitionService.ResponseQuality.allCases, id: \.self) { quality in
+                        if let interval = previews[quality] {
+                            Text(interval)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(Color(hex: quality.color) ?? .gray)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule()
+                                        .fill(Color(hex: quality.color)?.opacity(0.15) ?? .gray.opacity(0.15))
+                                )
+                        }
                     }
-
-                    Text("Don't Know")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.appText)
                 }
+                .padding(.horizontal, AppSpacing.lg)
             }
 
-            Spacer()
+            // 4-Button Grid (Again, Hard, Good, Easy)
+            HStack(spacing: AppSpacing.md) {
+                // Again button (quality 0)
+                responseButton(
+                    quality: .again,
+                    title: SpacedRepetitionService.ResponseQuality.again.titleVi,
+                    subtitle: nil,
+                    icon: SpacedRepetitionService.ResponseQuality.again.icon,
+                    color: Color(hex: SpacedRepetitionService.ResponseQuality.again.color) ?? .red,
+                    width: 70
+                )
 
-            // Skip button
-            Button(action: {
-                viewModel.skipCard()
-            }) {
-                VStack(spacing: 8) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.appTextSecondary.opacity(0.15))
-                            .frame(width: 60, height: 60)
+                // Hard button (quality 1)
+                responseButton(
+                    quality: .hard,
+                    title: SpacedRepetitionService.ResponseQuality.hard.titleVi,
+                    subtitle: nil,
+                    icon: SpacedRepetitionService.ResponseQuality.hard.icon,
+                    color: Color(hex: SpacedRepetitionService.ResponseQuality.hard.color) ?? .orange,
+                    width: 70
+                )
 
-                        Image(systemName: "forward.fill")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.appTextSecondary)
-                    }
+                // Good button (quality 2)
+                responseButton(
+                    quality: .good,
+                    title: SpacedRepetitionService.ResponseQuality.good.titleVi,
+                    subtitle: nil,
+                    icon: SpacedRepetitionService.ResponseQuality.good.icon,
+                    color: Color(hex: SpacedRepetitionService.ResponseQuality.good.color) ?? .green,
+                    width: 70
+                )
 
-                    Text("Skip")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.appTextSecondary)
-                }
+                // Easy button (quality 3)
+                responseButton(
+                    quality: .easy,
+                    title: SpacedRepetitionService.ResponseQuality.easy.titleVi,
+                    subtitle: nil,
+                    icon: SpacedRepetitionService.ResponseQuality.easy.icon,
+                    color: Color(hex: SpacedRepetitionService.ResponseQuality.easy.color) ?? .blue,
+                    width: 70
+                )
             }
-
-            Spacer()
-
-            // I Know It button
-            Button(action: {
-                Task {
-                    await viewModel.markCorrect()
-                }
-            }) {
-                VStack(spacing: 8) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.appSuccess.opacity(0.15))
-                            .frame(width: 70, height: 70)
-
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 30, weight: .bold))
-                            .foregroundColor(.appSuccess)
-                    }
-
-                    Text("I Know It")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.appText)
-                }
-            }
+            .padding(.horizontal, AppSpacing.lg)
         }
-        .padding(.horizontal, AppSpacing.xl2)
         .padding(.top, AppSpacing.xl)
+    }
+
+    private func responseButton(
+        quality: SpacedRepetitionService.ResponseQuality,
+        title: String,
+        subtitle: String?,
+        icon: String,
+        color: Color,
+        width: CGFloat
+    ) -> some View {
+        Button(action: {
+            Task {
+                await viewModel.reviewCard(quality: quality.rawValue)
+            }
+        }) {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.15))
+                        .frame(width: width, height: width)
+
+                    Image(systemName: icon)
+                        .font(.system(size: width * 0.4, weight: .bold))
+                        .foregroundColor(color)
+                }
+
+                Text(title)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.appText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.appTextSecondary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func getPreviewIntervals() -> [SpacedRepetitionService.ResponseQuality: String]? {
+        return viewModel.getPreviewIntervals()
     }
 
     // MARK: - Results View

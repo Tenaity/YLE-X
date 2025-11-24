@@ -47,6 +47,7 @@ struct WordDetailView: View {
         .background(Color.appBackground)
         .navigationTitle(word.word)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
     }
 
     // MARK: - Header Section
@@ -96,24 +97,72 @@ struct WordDetailView: View {
         .appShadow(level: .light)
     }
 
-    // MARK: - Audio Section
+    // MARK: - Audio Section (Redesigned)
 
     private var audioSection: some View {
-        VStack(spacing: AppSpacing.md) {
-            // Section title
-            HStack {
-                Image(systemName: "speaker.wave.3.fill")
-                    .font(.system(size: 16))
-                Text("Pronunciation")
-                    .font(.system(size: 18, weight: .bold))
-                Spacer()
-            }
-            .foregroundColor(.appText)
+        VStack(spacing: AppSpacing.lg) {
+            // Section header with gradient background
+            HStack(spacing: AppSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.appPrimary.opacity(0.2),
+                                    Color.appPrimary.opacity(0.1)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 44, height: 44)
 
-            // Audio buttons
-            HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "speaker.wave.3.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.appPrimary)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Pronunciation")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.appText)
+
+                    Text("Tap to hear")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.appTextSecondary)
+                }
+
+                Spacer()
+
+                // Playing indicator (animated)
+                if audioService.isPlaying {
+                    HStack(spacing: 3) {
+                        ForEach(0..<3) { index in
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.appPrimary)
+                                .frame(width: 3, height: 12)
+                                .scaleEffect(y: audioService.isPlaying ? 1.5 : 0.5, anchor: .bottom)
+                                .animation(
+                                    .easeInOut(duration: 0.4)
+                                    .repeatForever()
+                                    .delay(Double(index) * 0.15),
+                                    value: audioService.isPlaying
+                                )
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(Color.appPrimary.opacity(0.15))
+                    )
+                }
+            }
+
+            // Audio buttons with vertical stack for better mobile UX
+            VStack(spacing: AppSpacing.md) {
                 // British
-                AudioButton(
+                ModernAudioButton(
                     accent: .british,
                     ipa: word.pronunciation.british.ipa,
                     isSelected: selectedAccent == .british,
@@ -121,14 +170,16 @@ struct WordDetailView: View {
                     hasAudio: word.pronunciation.british.hasAudio,
                     audioSource: word.pronunciation.british.audioSource,
                     action: {
-                        selectedAccent = .british
+                        withAnimation(.appBouncy) {
+                            selectedAccent = .british
+                        }
                         audioService.playAudio(for: word, accent: .british)
                         HapticManager.shared.playMedium()
                     }
                 )
 
                 // American
-                AudioButton(
+                ModernAudioButton(
                     accent: .american,
                     ipa: word.pronunciation.american.ipa,
                     isSelected: selectedAccent == .american,
@@ -136,37 +187,81 @@ struct WordDetailView: View {
                     hasAudio: word.pronunciation.american.hasAudio,
                     audioSource: word.pronunciation.american.audioSource,
                     action: {
-                        selectedAccent = .american
+                        withAnimation(.appBouncy) {
+                            selectedAccent = .american
+                        }
                         audioService.playAudio(for: word, accent: .american)
                         HapticManager.shared.playMedium()
                     }
                 )
             }
 
-            // Audio source indicator
+            // Currently playing info
             if audioService.isPlaying {
-                HStack(spacing: 6) {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 12))
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 14, weight: .semibold))
 
-                    Text("Playing: \(audioService.audioSource.displayName)")
-                        .font(.system(size: 12, weight: .medium))
+                    Text("Audio source:")
+                        .font(.system(size: 13, weight: .medium))
+
+                    Text(audioService.audioSource.displayName)
+                        .font(.system(size: 13, weight: .bold))
+
+                    Spacer()
+
+                    // Waveform animation
+                    HStack(spacing: 2) {
+                        ForEach(0..<5) { index in
+                            Capsule()
+                                .fill(Color.appSuccess)
+                                .frame(width: 2, height: CGFloat.random(in: 6...14))
+                                .animation(
+                                    .easeInOut(duration: 0.3)
+                                    .repeatForever()
+                                    .delay(Double(index) * 0.1),
+                                    value: audioService.isPlaying
+                                )
+                        }
+                    }
                 }
-                .foregroundColor(.appPrimary)
+                .foregroundColor(.appSuccess)
                 .padding(.horizontal, AppSpacing.md)
-                .padding(.vertical, 6)
+                .padding(.vertical, AppSpacing.sm)
                 .background(
-                    Capsule()
-                        .fill(Color.appPrimary.opacity(0.1))
+                    RoundedRectangle(cornerRadius: AppRadius.md)
+                        .fill(Color.appSuccess.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppRadius.md)
+                                .strokeBorder(Color.appSuccess.opacity(0.3), lineWidth: 1)
+                        )
                 )
+                .transition(.asymmetric(
+                    insertion: .scale.combined(with: .opacity),
+                    removal: .scale.combined(with: .opacity)
+                ))
             }
         }
-        .padding(AppSpacing.lg)
+        .padding(AppSpacing.xl)
         .background(
-            RoundedRectangle(cornerRadius: AppRadius.lg)
+            RoundedRectangle(cornerRadius: AppRadius.xl)
                 .fill(Color.appBackgroundSecondary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.xl)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    Color.appPrimary.opacity(0.1),
+                                    Color.appPrimary.opacity(0.05)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
         )
-        .appShadow(level: .subtle)
+        .appShadow(level: .medium)
     }
 
     // MARK: - Definitions Section
@@ -407,7 +502,191 @@ struct WordDetailView: View {
     }
 }
 
-// MARK: - Audio Button
+// MARK: - Modern Audio Button (Redesigned)
+
+struct ModernAudioButton: View {
+    let accent: AudioAccent
+    let ipa: String
+    let isSelected: Bool
+    let isPlaying: Bool
+    let hasAudio: Bool
+    let audioSource: String
+    let action: () -> Void
+
+    @State private var isPressed = false
+    @State private var rotationDegrees: Double = 0
+
+    var body: some View {
+        Button(action: {
+            isPressed = true
+            HapticManager.shared.playMedium()
+            action()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isPressed = false
+            }
+        }) {
+            HStack(alignment: .top, spacing: AppSpacing.lg) {
+                // Flag circle - Top left corner
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: isSelected ? [
+                                    Color.appPrimary,
+                                    Color.appPrimary.opacity(0.8)
+                                ] : [
+                                    Color.appPrimary.opacity(0.15),
+                                    Color.appPrimary.opacity(0.1)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 26, height: 26)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(
+                                    isSelected ? Color.white.opacity(0.3) : Color.clear,
+                                    lineWidth: 2
+                                )
+                        )
+
+                    Text(accent.flag)
+                        .font(.system(size: 18))
+                }
+                .scaleEffect(isPlaying && isSelected ? 1.05 : 1.0)
+
+                // Content - 3 rows of info (spread evenly)
+                VStack(alignment: .leading, spacing: 0) {
+                    // Row 1: Accent name
+                    Text(accent.displayName)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(isSelected ? .white : .appText)
+                        .lineLimit(1)
+
+                    Spacer()
+                        .frame(height: 6)
+
+                    // Row 2: Audio quality badge
+                    HStack(spacing: 4) {
+                        Image(systemName: hasAudio ? "checkmark.circle.fill" : "waveform")
+                            .font(.system(size: 9, weight: .semibold))
+
+                        Text(hasAudio ? audioSource : "TTS")
+                            .font(.system(size: 10, weight: .bold))
+                            .textCase(.uppercase)
+                            .lineLimit(1)
+                    }
+                    .foregroundColor(hasAudio ? .appSuccess : .appTextSecondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        Capsule()
+                            .fill(hasAudio ? Color.appSuccess.opacity(0.15) : Color.appTextSecondary.opacity(0.1))
+                    )
+                    .fixedSize(horizontal: true, vertical: false)
+
+                    Spacer()
+                        .frame(height: 6)
+
+                    // Row 3: IPA pronunciation
+                    HStack(spacing: 4) {
+                        Image(systemName: "textformat.abc")
+                            .font(.system(size: 11))
+                            .foregroundColor(isSelected ? .white.opacity(0.7) : .appTextSecondary)
+
+                        Text(ipa)
+                            .font(.system(size: 14, weight: .medium, design: .monospaced))
+                            .foregroundColor(isSelected ? .white : .appText)
+                            .lineLimit(1)
+                    }
+                    .fixedSize(horizontal: true, vertical: false)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Spacer()
+
+                // Play button - Right side
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? Color.white.opacity(0.2) : Color.appPrimary.opacity(0.1))
+                        .frame(width: 36, height: 36)
+
+                    Image(systemName: isPlaying && isSelected ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(isSelected ? .white : .appPrimary)
+                        .rotationEffect(.degrees(rotationDegrees))
+                }
+            }
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.vertical, AppSpacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.xl)
+                    .fill(
+                        isSelected ?
+                        LinearGradient(
+                            colors: [
+                                Color.appPrimary,
+                                Color.appPrimary.opacity(0.85)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ) :
+                        LinearGradient(
+                            colors: [
+                                Color.appBackground,
+                                Color.appBackground
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.xl)
+                    .strokeBorder(
+                        isSelected ?
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.3),
+                                Color.white.opacity(0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ) :
+                        LinearGradient(
+                            colors: [
+                                Color.appPrimary.opacity(0.3),
+                                Color.appPrimary.opacity(0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
+            )
+            .appShadow(level: isSelected ? .medium : .subtle)
+            .scaleEffect(isPressed ? 0.97 : 1.0)
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPlaying)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isSelected)
+        .animation(.easeOut(duration: 0.1), value: isPressed)
+        .onChange(of: isPlaying) { oldValue, newValue in
+            if newValue && isSelected {
+                withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+                    rotationDegrees = 360
+                }
+            } else {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    rotationDegrees = 0
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Audio Button (Legacy - Keep for compatibility)
 
 struct AudioButton: View {
     let accent: AudioAccent
@@ -419,62 +698,15 @@ struct AudioButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: AppSpacing.sm) {
-                // Flag + Name
-                HStack(spacing: 8) {
-                    Text(accent.flag)
-                        .font(.system(size: 24))
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(accent.displayName)
-                            .font(.system(size: 15, weight: .bold))
-
-                        // Audio source badge
-                        if hasAudio {
-                            Text(audioSource)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.appSuccess)
-                        } else {
-                            Text("TTS")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.appTextSecondary)
-                        }
-                    }
-
-                    Spacer()
-
-                    // Speaker icon
-                    Image(systemName: isPlaying ? "speaker.wave.3.fill" : "speaker.wave.2")
-                        .font(.system(size: 20))
-                        .foregroundColor(isSelected ? .white : .appPrimary)
-                }
-
-                Divider()
-
-                // IPA
-                Text(ipa)
-                    .font(.system(size: 18, weight: .medium, design: .monospaced))
-                    .foregroundColor(isSelected ? .white : .appText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(AppSpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .fill(isSelected ? Color.appPrimary : Color.appBackground)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .strokeBorder(
-                        isSelected ? Color.clear : Color.appPrimary.opacity(0.3),
-                        lineWidth: 2
-                    )
-            )
-            .appShadow(level: isSelected ? .medium : .subtle)
-            .scaleEffect(isPlaying ? 1.02 : 1.0)
-            .animation(.appBouncy, value: isPlaying)
-        }
-        .buttonStyle(.plain)
+        ModernAudioButton(
+            accent: accent,
+            ipa: ipa,
+            isSelected: isSelected,
+            isPlaying: isPlaying,
+            hasAudio: hasAudio,
+            audioSource: audioSource,
+            action: action
+        )
     }
 }
 

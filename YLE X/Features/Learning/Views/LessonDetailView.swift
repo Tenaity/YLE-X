@@ -61,6 +61,7 @@ struct LessonDetailView: View {
             }
             .navigationTitle("Lesson Preview")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .tabBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Close") {

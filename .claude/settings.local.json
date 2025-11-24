@@ -25,7 +25,9 @@
       "Bash(python3:*)",
       "Bash(/usr/libexec/PlistBuddy:*)",
       "Bash(xcrun simctl:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(awk:*)",
+      "Bash(firebase --version:*)"
     ],
     "deny": [],
     "ask": []

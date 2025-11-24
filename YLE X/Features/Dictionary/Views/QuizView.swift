@@ -38,6 +38,15 @@ struct QuizView: View {
         .navigationTitle("\(category.icon) Quiz")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 
     // MARK: - Mode Selection

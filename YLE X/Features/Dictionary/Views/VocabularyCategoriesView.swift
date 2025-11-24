@@ -12,6 +12,8 @@ struct VocabularyCategoriesView: View {
     @StateObject private var viewModel = DictionaryViewModel()
     @State private var selectedLevel: YLELevel = .starters
     @State private var showLevelInfo = false
+    @State private var selectedCategoryForFlashcard: VocabularyCategory?
+    @State private var selectedCategoryForQuiz: VocabularyCategory?
 
     private let columns = [
         GridItem(.flexible(), spacing: AppSpacing.md),
@@ -53,6 +55,16 @@ struct VocabularyCategoriesView: View {
             .refreshable {
                 await viewModel.refresh()
             }
+            .fullScreenCover(item: $selectedCategoryForFlashcard) { category in
+                NavigationStack {
+                    FlashcardDeckView(category: category, level: selectedLevel)
+                }
+            }
+            .fullScreenCover(item: $selectedCategoryForQuiz) { category in
+                NavigationStack {
+                    QuizView(category: category, level: selectedLevel)
+                }
+            }
         }
     }
 
@@ -70,7 +82,9 @@ struct VocabularyCategoriesView: View {
                     ForEach(viewModel.categories) { category in
                         CategoryCardWithActions(
                             category: category,
-                            selectedLevel: selectedLevel
+                            selectedLevel: selectedLevel,
+                            selectedCategoryForFlashcard: $selectedCategoryForFlashcard,
+                            selectedCategoryForQuiz: $selectedCategoryForQuiz
                         )
                     }
                 }
@@ -387,6 +401,8 @@ struct LevelSelectionSheet: View {
 struct CategoryCardWithActions: View {
     let category: VocabularyCategory
     let selectedLevel: YLELevel
+    @Binding var selectedCategoryForFlashcard: VocabularyCategory?
+    @Binding var selectedCategoryForQuiz: VocabularyCategory?
 
     @State private var showActionSheet = false
 
@@ -406,8 +422,8 @@ struct CategoryCardWithActions: View {
             // Quick actions
             HStack(spacing: 0) {
                 // Flashcards button
-                NavigationLink {
-                    FlashcardDeckView(category: category, level: selectedLevel)
+                Button {
+                    selectedCategoryForFlashcard = category
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "rectangle.portrait.on.rectangle.portrait")
@@ -426,8 +442,8 @@ struct CategoryCardWithActions: View {
                     .frame(height: 20)
 
                 // Quiz button
-                NavigationLink {
-                    QuizView(category: category, level: selectedLevel)
+                Button {
+                    selectedCategoryForQuiz = category
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "questionmark.circle")
