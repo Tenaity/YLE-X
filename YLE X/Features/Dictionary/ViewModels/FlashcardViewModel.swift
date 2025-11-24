@@ -39,17 +39,35 @@ class FlashcardViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            // Fetch words for category and level
-            var query: Query = db.collection("dictionaries")
+            // Fetch words for category only (Firestore limit: only 1 ARRAY_CONTAINS per query)
+            let query: Query = db.collection("dictionaries")
                 .whereField("categories", arrayContains: category.categoryId)
-                .whereField("levels", arrayContains: level.rawValue)
 
-            let snapshot = try await query.limit(to: maxCards).getDocuments()
+            print("🔍 Flashcard Query:")
+            print("   Category: \(category.categoryId)")
+            print("   Level: \(level.rawValue)")
+
+            let snapshot = try await query.limit(to: maxCards * 3).getDocuments()
+            print("   Documents found: \(snapshot.documents.count)")
+
             var words = snapshot.documents.compactMap {
                 try? $0.data(as: DictionaryWord.self)
             }
+            print("   Words decoded: \(words.count)")
+
+            // Filter by level on client side
+            words = words.filter { word in
+                word.levels.contains(level.rawValue)
+            }
+            print("   After level filter: \(words.count)")
+
+            // Limit to maxCards before session type filter
+            if words.count > maxCards * 2 {
+                words = Array(words.prefix(maxCards * 2))
+            }
 
             // Filter based on session type
+            let beforeFilterCount = words.count
             switch sessionType {
             case .new:
                 // Show words not yet studied
@@ -76,9 +94,26 @@ class FlashcardViewModel: ObservableObject {
                 // Show all words (already filtered by query)
                 break
             }
+            print("   After \(sessionType) filter: \(words.count) (from \(beforeFilterCount))")
+
+            // If no words found, set helpful error message
+            if words.isEmpty {
+                if snapshot.documents.isEmpty {
+                    errorMessage = "No words found in Firebase for this category and level. Please import data first."
+                } else if beforeFilterCount > 0 && words.count == 0 {
+                    errorMessage = "No \(sessionType) cards available. Try different session type."
+                } else {
+                    errorMessage = "No cards available"
+                }
+            }
 
             // Shuffle cards for variety
             words.shuffle()
+
+            // Limit to maxCards
+            if words.count > maxCards {
+                words = Array(words.prefix(maxCards))
+            }
 
             // Create session
             currentSession = FlashcardSession(
@@ -91,56 +126,55 @@ class FlashcardViewModel: ObservableObject {
             sessionStartTime = Date()
 
         } catch {
+            print("❌ Flashcard Error: \(error)")
             errorMessage = "Failed to load flashcards: \(error.localizedDescription)"
         }
 
         isLoading = false
     }
 
-    // MARK: - Card Actions
+    // MARK: - Card Actions (SM-2 4-Button System)
 
-    /// Mark current card as correct
-    func markCorrect() async {
+    /// Review card with quality rating (0=Again, 1=Hard, 2=Good, 3=Easy)
+    func reviewCard(quality: Int) async {
         guard var session = currentSession,
               let word = session.currentCard,
               let wordId = word.id else { return }
 
-        // Update session
-        session.recordCorrect()
+        // Update session based on quality
+        if quality == 0 {
+            session.recordIncorrect()
+        } else {
+            session.recordCorrect()
+        }
         currentSession = session
 
-        // Update progress
-        await updateProgress(for: wordId, isCorrect: true)
+        // Update progress with SM-2 algorithm
+        await updateProgressWithSM2(for: wordId, quality: quality, categoryId: session.category.categoryId, level: session.level.rawValue)
 
         // Check if session complete
         if session.isComplete {
             await completeSession()
         }
 
-        // Play success haptic
-        HapticManager.shared.playSuccess()
+        // Play appropriate haptic
+        if quality == 0 {
+            HapticManager.shared.playError()
+        } else if quality == 3 {
+            HapticManager.shared.playSuccess()
+        } else {
+            HapticManager.shared.playLight()
+        }
     }
 
-    /// Mark current card as incorrect
+    /// Mark current card as correct (legacy - maps to Good)
+    func markCorrect() async {
+        await reviewCard(quality: 2)  // Good
+    }
+
+    /// Mark current card as incorrect (legacy - maps to Again)
     func markIncorrect() async {
-        guard var session = currentSession,
-              let word = session.currentCard,
-              let wordId = word.id else { return }
-
-        // Update session
-        session.recordIncorrect()
-        currentSession = session
-
-        // Update progress
-        await updateProgress(for: wordId, isCorrect: false)
-
-        // Check if session complete
-        if session.isComplete {
-            await completeSession()
-        }
-
-        // Play error haptic
-        HapticManager.shared.playError()
+        await reviewCard(quality: 0)  // Again
     }
 
     /// Skip current card (no progress update)
@@ -156,20 +190,31 @@ class FlashcardViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Progress Management
+    // MARK: - Progress Management (SM-2)
 
-    /// Update user progress for a word
-    private func updateProgress(for wordId: String, isCorrect: Bool) async {
+    /// Update user progress using SM-2 algorithm
+    private func updateProgressWithSM2(for wordId: String, quality: Int, categoryId: String, level: String) async {
         var progress = userProgress[wordId] ?? FlashcardProgress(
             userId: userId,
-            wordId: wordId
+            wordId: wordId,
+            categoryId: categoryId,
+            level: level
         )
 
-        if isCorrect {
-            progress.updateAfterCorrect()
-        } else {
-            progress.updateAfterIncorrect()
-        }
+        // Calculate next review using SM-2
+        let result = SpacedRepetitionService.shared.calculateNextReview(
+            currentEaseFactor: progress.easeFactor,
+            currentInterval: progress.interval,
+            quality: quality
+        )
+
+        // Update progress
+        progress.updateAfterReview(
+            quality: quality,
+            newEaseFactor: result.easeFactor,
+            newInterval: result.interval,
+            nextReviewDate: result.nextReviewDate
+        )
 
         // Save to local state
         userProgress[wordId] = progress
@@ -178,6 +223,16 @@ class FlashcardViewModel: ObservableObject {
         Task.detached {
             try? await self.saveProgressToFirebase(progress)
         }
+    }
+
+    /// Legacy update method (for backward compatibility)
+    private func updateProgress(for wordId: String, isCorrect: Bool) async {
+        await updateProgressWithSM2(
+            for: wordId,
+            quality: isCorrect ? 2 : 0,
+            categoryId: currentSession?.category.categoryId ?? "",
+            level: currentSession?.level.rawValue ?? ""
+        )
     }
 
     /// Save progress to Firebase
@@ -289,6 +344,30 @@ class FlashcardViewModel: ObservableObject {
         return userProgress.values
             .filter { $0.isDueForReview }
             .map { $0.wordId }
+    }
+
+    // MARK: - SM-2 Helpers
+
+    /// Get preview intervals for current card
+    func getPreviewIntervals() -> [SpacedRepetitionService.ResponseQuality: String] {
+        guard let word = currentSession?.currentCard,
+              let wordId = word.id else {
+            return [:]
+        }
+
+        let progress = userProgress[wordId]
+        let easeFactor = progress?.easeFactor ?? 2.5
+        let interval = progress?.interval ?? 0
+
+        return SpacedRepetitionService.shared.getPreviewIntervals(
+            currentEaseFactor: easeFactor,
+            currentInterval: interval
+        )
+    }
+
+    /// Get review statistics
+    func getReviewStatistics() -> ReviewStatistics {
+        return SpacedRepetitionService.shared.getReviewStatistics(userProgress)
     }
 }
 

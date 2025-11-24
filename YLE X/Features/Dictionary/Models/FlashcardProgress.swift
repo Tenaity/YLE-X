@@ -3,6 +3,7 @@
 //  YLE X
 //
 //  Created on 11/18/25.
+//  Updated on 11/23/25 - Enhanced with SM-2 Algorithm
 //  Tracks user progress for flashcard study using spaced repetition
 //
 
@@ -13,26 +14,64 @@ struct FlashcardProgress: Identifiable, Codable {
     @DocumentID var id: String?
     let userId: String
     let wordId: String
-    var masteryLevel: Int // 0-5 (0=new, 5=mastered)
-    var correctCount: Int
-    var incorrectCount: Int
-    var lastReviewed: Date
-    var nextReviewDate: Date
-    var streakDays: Int
-    var totalReviews: Int
+    let categoryId: String
+    let level: String
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case userId
-        case wordId
-        case masteryLevel
-        case correctCount
-        case incorrectCount
-        case lastReviewed
-        case nextReviewDate
-        case streakDays
-        case totalReviews
+    // MARK: - SM-2 Spaced Repetition Data
+
+    /// Current ease factor (1.3 - 2.5)
+    /// Higher = easier card, longer intervals
+    var easeFactor: Double
+
+    /// Current interval in days
+    var interval: Int
+
+    /// Number of times reviewed
+    var reviewCount: Int
+
+    /// Next review date
+    var nextReviewDate: Date
+
+    /// Last review date
+    var lastReviewDate: Date?
+
+    /// Date when card was first added to deck
+    let createdDate: Date
+
+    // MARK: - Performance Tracking
+
+    /// Total correct answers
+    var correctCount: Int
+
+    /// Total incorrect answers (Again responses)
+    var incorrectCount: Int
+
+    /// Current streak of consecutive correct answers
+    var currentStreak: Int
+
+    /// Best streak achieved
+    var bestStreak: Int
+
+    /// Last quality rating (0-3: Again, Hard, Good, Easy)
+    var lastQuality: Int?
+
+    // MARK: - Legacy Support (for backward compatibility)
+
+    var masteryLevel: Int {
+        // Convert interval to mastery level (0-5)
+        switch interval {
+        case 0: return 0      // New
+        case 1...5: return 1  // Learning
+        case 6...20: return 2 // Familiar
+        case 21...60: return 3 // Comfortable
+        case 61...180: return 4 // Proficient
+        default: return 5     // Mastered
+        }
     }
+
+    var totalReviews: Int { reviewCount }
+    var lastReviewed: Date { lastReviewDate ?? createdDate }
+    var streakDays: Int { currentStreak }
 
     // MARK: - Computed Properties
 
@@ -43,15 +82,23 @@ struct FlashcardProgress: Identifiable, Codable {
     }
 
     var isNew: Bool {
-        return totalReviews == 0
+        reviewCount == 0
     }
 
     var isDueForReview: Bool {
-        return Date() >= nextReviewDate
+        Date() >= nextReviewDate
     }
 
     var isMastered: Bool {
-        return masteryLevel >= 5
+        interval >= 180  // 6 months
+    }
+
+    var isLearning: Bool {
+        interval < 21  // Less than 3 weeks
+    }
+
+    var isMature: Bool {
+        interval >= 21  // 3 weeks or more
     }
 
     var masteryDescription: String {
@@ -78,95 +125,179 @@ struct FlashcardProgress: Identifiable, Codable {
         }
     }
 
+    var successRate: Double {
+        let total = correctCount + incorrectCount
+        guard total > 0 else { return 0 }
+        return Double(correctCount) / Double(total)
+    }
+
     // MARK: - Initializer
 
     init(
         userId: String,
         wordId: String,
-        masteryLevel: Int = 0,
+        categoryId: String,
+        level: String,
+        easeFactor: Double = 2.5,
+        interval: Int = 0,
+        reviewCount: Int = 0,
+        nextReviewDate: Date = Date(),
+        lastReviewDate: Date? = nil,
+        createdDate: Date = Date(),
         correctCount: Int = 0,
         incorrectCount: Int = 0,
-        lastReviewed: Date = Date(),
-        nextReviewDate: Date = Date(),
-        streakDays: Int = 0,
-        totalReviews: Int = 0
+        currentStreak: Int = 0,
+        bestStreak: Int = 0,
+        lastQuality: Int? = nil
     ) {
         self.userId = userId
         self.wordId = wordId
-        self.masteryLevel = masteryLevel
+        self.categoryId = categoryId
+        self.level = level
+        self.easeFactor = easeFactor
+        self.interval = interval
+        self.reviewCount = reviewCount
+        self.nextReviewDate = nextReviewDate
+        self.lastReviewDate = lastReviewDate
+        self.createdDate = createdDate
         self.correctCount = correctCount
         self.incorrectCount = incorrectCount
-        self.lastReviewed = lastReviewed
+        self.currentStreak = currentStreak
+        self.bestStreak = bestStreak
+        self.lastQuality = lastQuality
+    }
+
+    // MARK: - Spaced Repetition Logic (SM-2 Algorithm)
+
+    /// Update progress after review using SM-2 algorithm
+    mutating func updateAfterReview(quality: Int, newEaseFactor: Double, newInterval: Int, nextReviewDate: Date) {
+        self.easeFactor = newEaseFactor
+        self.interval = newInterval
         self.nextReviewDate = nextReviewDate
-        self.streakDays = streakDays
-        self.totalReviews = totalReviews
-    }
+        self.lastReviewDate = Date()
+        self.reviewCount += 1
+        self.lastQuality = quality
 
-    // MARK: - Spaced Repetition Logic
-
-    /// Calculate next review date based on mastery level (SM-2 Algorithm simplified)
-    mutating func updateAfterCorrect() {
-        correctCount += 1
-        totalReviews += 1
-        lastReviewed = Date()
-
-        // Increase mastery level (max 5)
-        if masteryLevel < 5 {
-            masteryLevel += 1
-        }
-
-        // Update streak
-        let calendar = Calendar.current
-        if calendar.isDateInToday(lastReviewed) || calendar.isDateInYesterday(lastReviewed) {
-            streakDays += 1
+        // Update performance tracking
+        if quality == 0 {
+            // Again: incorrect
+            incorrectCount += 1
+            currentStreak = 0
         } else {
-            streakDays = 1
+            // Hard/Good/Easy: correct
+            correctCount += 1
+            currentStreak += 1
+            if currentStreak > bestStreak {
+                bestStreak = currentStreak
+            }
         }
-
-        // Calculate next review date using spaced repetition intervals
-        let intervals: [Int: TimeInterval] = [
-            0: 1 * 60,           // 1 minute (new)
-            1: 10 * 60,          // 10 minutes
-            2: 1 * 3600,         // 1 hour
-            3: 24 * 3600,        // 1 day
-            4: 3 * 24 * 3600,    // 3 days
-            5: 7 * 24 * 3600     // 1 week (mastered)
-        ]
-
-        let interval = intervals[masteryLevel] ?? 24 * 3600
-        nextReviewDate = Date().addingTimeInterval(interval)
     }
 
+    /// Legacy method: Update after correct (maps to Good quality)
+    mutating func updateAfterCorrect() {
+        let result = SpacedRepetitionService.shared.calculateNextReview(
+            currentEaseFactor: easeFactor,
+            currentInterval: interval,
+            quality: 2  // Good
+        )
+        updateAfterReview(
+            quality: 2,
+            newEaseFactor: result.easeFactor,
+            newInterval: result.interval,
+            nextReviewDate: result.nextReviewDate
+        )
+    }
+
+    /// Legacy method: Update after incorrect (maps to Again quality)
     mutating func updateAfterIncorrect() {
-        incorrectCount += 1
-        totalReviews += 1
-        lastReviewed = Date()
+        let result = SpacedRepetitionService.shared.calculateNextReview(
+            currentEaseFactor: easeFactor,
+            currentInterval: interval,
+            quality: 0  // Again
+        )
+        updateAfterReview(
+            quality: 0,
+            newEaseFactor: result.easeFactor,
+            newInterval: result.interval,
+            nextReviewDate: result.nextReviewDate
+        )
+    }
 
-        // Decrease mastery level (min 0)
-        if masteryLevel > 0 {
-            masteryLevel -= 1
-        }
+    // MARK: - Firestore Coding Keys
 
-        // Reset streak
-        streakDays = 0
-
-        // Review again soon (5 minutes)
-        nextReviewDate = Date().addingTimeInterval(5 * 60)
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId
+        case wordId
+        case categoryId
+        case level
+        case easeFactor
+        case interval
+        case reviewCount
+        case nextReviewDate
+        case lastReviewDate
+        case createdDate
+        case correctCount
+        case incorrectCount
+        case currentStreak
+        case bestStreak
+        case lastQuality
     }
 
     // MARK: - Static Samples
 
     static let sample = FlashcardProgress(
         userId: "user123",
-        wordId: "word_cat",
-        masteryLevel: 2,
+        wordId: "cat",
+        categoryId: "animals",
+        level: "starters",
+        easeFactor: 2.3,
+        interval: 10,
+        reviewCount: 7,
         correctCount: 5,
         incorrectCount: 2,
-        lastReviewed: Date(),
-        nextReviewDate: Date().addingTimeInterval(3600),
-        streakDays: 3,
-        totalReviews: 7
+        currentStreak: 3,
+        bestStreak: 3,
+        lastQuality: 2
     )
+
+    static let sampleNew = FlashcardProgress(
+        userId: "user123",
+        wordId: "dog",
+        categoryId: "animals",
+        level: "starters"
+    )
+
+    static let sampleMature = FlashcardProgress(
+        userId: "user123",
+        wordId: "apple",
+        categoryId: "food_and_drink",
+        level: "starters",
+        easeFactor: 2.5,
+        interval: 30,
+        reviewCount: 15,
+        correctCount: 14,
+        incorrectCount: 1,
+        currentStreak: 10,
+        bestStreak: 10,
+        lastQuality: 3
+    )
+}
+
+// MARK: - Firestore Collection Extension
+
+extension FlashcardProgress {
+    static let collectionName = "flashcardProgress"
+
+    /// Generate document ID: userId_wordId
+    static func documentId(userId: String, wordId: String) -> String {
+        return "\(userId)_\(wordId)"
+    }
+
+    /// Get document ID for this progress
+    var documentId: String {
+        Self.documentId(userId: userId, wordId: wordId)
+    }
 }
 
 // MARK: - Flashcard Session
